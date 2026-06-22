@@ -17,9 +17,10 @@ interface DatePickerProps {
   date?: Date;
   setDate: (date?: Date) => void;
   invalid?: boolean;
+  className?: string;
 }
 
-export function DatePicker({ date, setDate, invalid }: DatePickerProps) {
+export function DatePicker({ date, setDate, invalid, className }: DatePickerProps) {
   const currentYear = new Date().getFullYear();
   return (
     <Popover>
@@ -29,7 +30,8 @@ export function DatePicker({ date, setDate, invalid }: DatePickerProps) {
           className={cn(
             "w-[280px] justify-start text-left font-normal",
             !date && "text-muted-foreground",
-            invalid && "ring-2 ring-red-500 animate-pulse"
+            invalid && "ring-2 ring-red-500 animate-pulse",
+            className
           )}
         >
           <CalendarIcon className="mr-2 h-4 w-4" />

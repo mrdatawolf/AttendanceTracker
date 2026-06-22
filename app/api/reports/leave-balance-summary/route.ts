@@ -137,7 +137,10 @@ export async function GET(request: NextRequest) {
     );
 
     // Check if user is superuser or has global read access for permission filtering
-    const userIsSuperuser = await isSuperuser(authUser.id);
+    const userIsSuperuser = await isSuperuser(authUser.id)
+      || authUser.group?.is_master === 1
+      || authUser.group?.can_view_all === 1
+      || authUser.role?.can_access_all_groups === 1;
     const globalRead = isGlobalReadAccessEnabled(brandFeatures);
 
     // Build employee query with permission filtering

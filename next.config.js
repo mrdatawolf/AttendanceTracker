@@ -16,6 +16,10 @@ const nextConfig = {
       './temp-server-build/**',
       './.node-portable/**',
       './electron-app/node_modules/**',
+      // Sample/example data and live runtime databases must never ship in build output
+      './Examples/**',
+      './examples/**',
+      './databases/**',
     ],
   },
 

@@ -23,6 +23,9 @@ const EXCLUDE_FOLDERS = [
   'distribute_server', // Contains built server exe files - must not be copied into new builds
   'electron-app',
   '.git',
+  'Examples',          // Sample/example data - must not ship in distributed builds
+  'examples',
+  'databases',         // Live runtime database - must not ship with real data; recreated empty below
 ];
 
 // Files to exclude when copying (Windows reserved names cause NSIS build failures)

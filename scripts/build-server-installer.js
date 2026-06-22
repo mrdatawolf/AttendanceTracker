@@ -91,6 +91,9 @@ function extractZip(zipPath, destDir) {
 // Windows reserved device names that cause NSIS build failures
 const EXCLUDE_FILES = ['nul', 'con', 'prn', 'aux'];
 
+// Sample/example data and live runtime databases must never ship in the installer
+const EXCLUDE_FOLDERS = ['Examples', 'examples', 'databases'];
+
 // Copy directory recursively
 function copyDir(src, dest) {
   if (!fs.existsSync(dest)) {
@@ -103,6 +106,12 @@ function copyDir(src, dest) {
     // Skip Windows reserved device names
     if (EXCLUDE_FILES.includes(entry.name.toLowerCase())) {
       console.log(`  Skipping reserved name: ${entry.name}`);
+      continue;
+    }
+
+    // Skip sample data / live database folders
+    if (entry.isDirectory() && EXCLUDE_FOLDERS.includes(entry.name)) {
+      console.log(`  Skipping excluded folder: ${entry.name}`);
       continue;
     }
 

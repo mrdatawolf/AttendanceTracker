@@ -85,8 +85,12 @@ export function ReportFilters({
   const isSameDay = (a: Date | undefined, b: Date) =>
     !!a && a.getFullYear() === b.getFullYear() && a.getMonth() === b.getMonth() && a.getDate() === b.getDate();
 
+  const prevVacStart = new Date(vacStart.getFullYear() - 1, 5, 1);
+  const prevVacEnd = new Date(vacStart.getFullYear(), 4, 31);
+
   const isYtdActive = isSameDay(startDate, ytdStart) && isSameDay(endDate, today);
   const isVacActive = isSameDay(startDate, vacStart) && isSameDay(endDate, vacEnd);
+  const isVacPrevActive = isSameDay(startDate, prevVacStart) && isSameDay(endDate, prevVacEnd);
 
   const filteredEmployees = employees
     .filter(e => selectedGroupId === 'all' || e.group_id?.toString() === selectedGroupId)
@@ -165,14 +169,14 @@ export function ReportFilters({
           </div>
         )}
 
-        <div className="flex flex-col flex-1 min-w-[200px] gap-1.5">
+        <div className="flex flex-col min-w-[160px] gap-1.5">
           <label className="text-sm font-medium">Start Date</label>
-          <DatePicker date={startDate} setDate={onStartDateChange} invalid={dateRangeInvalid} />
+          <DatePicker date={startDate} setDate={onStartDateChange} invalid={dateRangeInvalid} className="w-[160px]" />
         </div>
 
-        <div className="flex flex-col flex-1 min-w-[200px] gap-1.5">
+        <div className="flex flex-col min-w-[160px] gap-1.5">
           <label className="text-sm font-medium">End Date</label>
-          <DatePicker date={endDate} setDate={onEndDateChange} invalid={dateRangeInvalid} />
+          <DatePicker date={endDate} setDate={onEndDateChange} invalid={dateRangeInvalid} className="w-[160px]" />
         </div>
 
         <div className="flex flex-col gap-1.5">
@@ -199,9 +203,21 @@ export function ReportFilters({
                 onStartDateChange(vacStart);
                 onEndDateChange(vacEnd);
               }}
-              title="Full vacation year: June 1 – May 31"
+              title="Current vacation year: June 1 – May 31"
             >
-              Vacation Year
+              VYC
+            </Button>
+            <Button
+              variant={isVacPrevActive ? 'default' : 'outline'}
+              size="sm"
+              className="h-9 text-sm px-3"
+              onClick={() => {
+                onStartDateChange(prevVacStart);
+                onEndDateChange(prevVacEnd);
+              }}
+              title="Previous vacation year: June 1 – May 31"
+            >
+              VYP
             </Button>
           </div>
         </div>

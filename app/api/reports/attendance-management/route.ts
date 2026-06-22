@@ -48,7 +48,10 @@ export async function GET(request: NextRequest) {
     const empId = parseInt(employeeId);
 
     // Permission check
-    const userIsSuperuser = await isSuperuser(authUser.id);
+    const userIsSuperuser = await isSuperuser(authUser.id)
+      || authUser.group?.is_master === 1
+      || authUser.group?.can_view_all === 1
+      || authUser.role?.can_access_all_groups === 1;
     const brandFeatures = await getBrandFeatures();
     const globalRead = isGlobalReadAccessEnabled(brandFeatures);
 

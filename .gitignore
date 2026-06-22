@@ -39,7 +39,7 @@ lib/brand-selection.json
 # misc
 .DS_Store
 *.pem
-/examples
+/Examples
 /.node-portable
 /.claude
 
