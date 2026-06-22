@@ -88,7 +88,10 @@ function main() {
   console.log('');
 
   try {
-    execSync('next build', {
+    // --webpack: Turbopack's externalized-module handling for native addons
+    // (e.g. libsql's platform binary) doesn't resolve correctly in
+    // `output: standalone` on Windows. Force webpack until that's fixed upstream.
+    execSync('next build --webpack', {
       env,
       stdio: 'inherit',
       cwd: ROOT_DIR
