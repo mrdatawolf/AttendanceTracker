@@ -1,0 +1,73 @@
+{
+  "brandId": "LCIT",
+  "brandURI": "http://127.0.0.1:6029",
+  "DemoMode": true,
+  "features": {
+    "leaveManagement": {
+      "enabled": true,
+      "leaveTypes": {
+        "vacation": { "enabled": true, "timeCode": "V", "label": "Vacation" },
+        "sickLeave": { "enabled": true, "timeCode": "PS", "label": "Paid Sick Leave" },
+        "floatingHoliday": { "enabled": true, "timeCode": "FH", "label": "Floating Holiday" },
+        "paidHoliday": { "enabled": true, "timeCode": "H", "label": "Holiday" }
+      }
+    },
+    "approvalWorkflows": {
+      "enabled": true
+    },
+    "policyEnforcement": {
+      "enabled": true
+    },
+    "accrualCalculations": {
+      "enabled": true
+    },
+    "colorCustomization": {
+      "enabled": false,
+      "allowTimeCodeColors": false,
+      "allowStatusColors": false
+    },
+    "statusColors": {
+      "warning": "amber",
+      "critical": "red",
+      "normal": "gray"
+    },
+    "companyHolidays": {
+      "enabled": false,
+      "year": 2026,
+      "dates": []
+    },
+    "reports": {
+      "leaveBalanceSummary": {
+        "enabled": false,
+        "warningThreshold": 0.9,
+        "criticalThreshold": 1.0
+      }
+    },
+    "breakTracking": {
+      "enabled": false,
+      "breaks": {
+        "break_1": { "start": "09:00", "end": "11:00", "duration": 15 },
+        "lunch":   { "start": "11:00", "end": "14:00", "duration": 30 },
+        "break_2": { "start": "14:00", "end": "16:00", "duration": 15 }
+      },
+      "requireTimeEntry": false,
+      "graceMinutes": 0
+    },
+    "officeAttendanceForecast": {
+      "enabled": false,
+      "timeOffCodes": ["V", "PS", "FH", "PTO", "S", "FM", "B", "JD"],
+      "daysToShow": 5
+    },
+    "globalReadAccess": {
+      "enabled": false
+    },
+    "officePresenceTracking": {
+      "enabled": false,
+      "resetTime": "17:00"
+    },
+    "attendanceManagement": {
+      "enabled": false
+    },
+    "attendanceYearLayout": "table"
+  }
+}

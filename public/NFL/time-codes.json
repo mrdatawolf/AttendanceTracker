@@ -1,0 +1,151 @@
+{
+  "brandId": "NFL",
+  "version": "1.0",
+  "description": "Time codes for NFL brand. These define the available time entry types and their default annual allocations.",
+  "timeCodes": [
+    {
+      "id": 13,
+      "code": "VAC",
+      "description": "Vacation",
+      "hours_limit": null,
+      "default_allocation": 80,
+      "is_active": 1
+    },
+    {
+      "id": 7,
+      "code": "FLH",
+      "description": "Floating Holiday",
+      "hours_limit": 24,
+      "default_allocation": 24,
+      "is_active": 1
+    },
+    {
+      "id": 11,
+      "code": "PSL",
+      "description": "Paid Sick Leave",
+      "hours_limit": 40,
+      "default_allocation": 40,
+      "is_active": 1
+    },
+    {
+      "id": 1,
+      "code": "SUP",
+      "description": "Sick Unpaid",
+      "hours_limit": null,
+      "default_allocation": null,
+      "is_active": 1
+    },
+    {
+      "id": 9,
+      "code": "PER",
+      "description": "Personal",
+      "hours_limit": null,
+      "default_allocation": null,
+      "is_active": 1
+    },
+    {
+      "id": 17,
+      "code": "LA",
+      "description": "Late Arrival",
+      "hours_limit": null,
+      "default_allocation": null,
+      "is_active": 1
+    },
+    {
+      "id": 18,
+      "code": "LE",
+      "description": "Left Early",
+      "hours_limit": null,
+      "default_allocation": null,
+      "is_active": 1
+    },
+    {
+      "id": 5,
+      "code": "HOL",
+      "description": "Holiday",
+      "hours_limit": null,
+      "default_allocation": null,
+      "is_active": 1
+    },
+    {
+      "id": 15,
+      "code": "BRP",
+      "description": "Bereavement Paid",
+      "hours_limit": 24,
+      "default_allocation": 24,
+      "is_active": 1
+    },
+    {
+      "id": 16,
+      "code": "BRU",
+      "description": "Bereavement Unpaid",
+      "hours_limit": 16,
+      "default_allocation": 16,
+      "is_active": 1
+    },
+    {
+      "id": 6,
+      "code": "JD",
+      "description": "Jury Duty",
+      "hours_limit": null,
+      "default_allocation": null,
+      "is_active": 1
+    },
+    {
+      "id": 10,
+      "code": "VTO",
+      "description": "Voting Time Off",
+      "hours_limit": null,
+      "default_allocation": null,
+      "is_active": 1
+    },
+    {
+      "id": 4,
+      "code": "FMLA",
+      "description": "FMLA/CFRA",
+      "hours_limit": null,
+      "default_allocation": null,
+      "is_active": 1
+    },
+    {
+      "id": 14,
+      "code": "WC",
+      "description": "Worker's Comp",
+      "hours_limit": null,
+      "default_allocation": null,
+      "is_active": 1
+    },
+    {
+      "id": 2,
+      "code": "BR",
+      "description": "Bereavement",
+      "hours_limit": 24,
+      "default_allocation": 24,
+      "is_active": 0
+    },
+    {
+      "id": 3,
+      "code": "O",
+      "description": "Other",
+      "hours_limit": null,
+      "default_allocation": null,
+      "is_active": 0
+    },
+    {
+      "id": 8,
+      "code": "WCUP",
+      "description": "Workers Comp Unpaid",
+      "hours_limit": null,
+      "default_allocation": null,
+      "is_active": 0
+    },
+    {
+      "id": 12,
+      "code": "VUP",
+      "description": "Vacation Unpaid",
+      "hours_limit": null,
+      "default_allocation": null,
+      "is_active": 0
+    }
+  ]
+}

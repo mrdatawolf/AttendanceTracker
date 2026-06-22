@@ -1,0 +1,215 @@
+{
+  "brandId": "SBS",
+  "version": "1.0",
+  "description": "Time codes for SBS brand. These define the available time entry types and their default annual allocations.",
+  "timeCodes": [
+    {
+      "id": 1,
+      "code": "D",
+      "description": "Discipline",
+      "hours_limit": null,
+      "default_allocation": null,
+      "is_active": 0
+    },
+    {
+      "id": 2,
+      "code": "B",
+      "description": "Bereavement",
+      "hours_limit": 24,
+      "default_allocation": 24,
+      "is_active": 1
+    },
+    {
+      "id": 3,
+      "code": "FE",
+      "description": "Family Emergency",
+      "hours_limit": null,
+      "default_allocation": null,
+      "is_active": 0
+    },
+    {
+      "id": 4,
+      "code": "F",
+      "description": "CFRA",
+      "hours_limit": null,
+      "default_allocation": null,
+      "is_active": 1
+    },
+    {
+      "id": 5,
+      "code": "H",
+      "description": "Holiday",
+      "hours_limit": null,
+      "default_allocation": null,
+      "is_active": 1
+    },
+    {
+      "id": 6,
+      "code": "J",
+      "description": "Jury Duty",
+      "hours_limit": null,
+      "default_allocation": null,
+      "is_active": 1
+    },
+    {
+      "id": 7,
+      "code": "FH",
+      "description": "Floating Holiday",
+      "hours_limit": 24,
+      "default_allocation": 24,
+      "is_active": 0
+    },
+    {
+      "id": 8,
+      "code": "DP",
+      "description": "Designated Person",
+      "hours_limit": null,
+      "default_allocation": null,
+      "is_active": 0
+    },
+    {
+      "id": 9,
+      "code": "P",
+      "description": "Personal",
+      "hours_limit": null,
+      "default_allocation": 40,
+      "is_active": 1
+    },
+    {
+      "id": 10,
+      "code": "LOW",
+      "description": "Lack of Work",
+      "hours_limit": null,
+      "default_allocation": null,
+      "is_active": 0
+    },
+    {
+      "id": 11,
+      "code": "I",
+      "description": "Illness Self",
+      "hours_limit": 40,
+      "default_allocation": 40,
+      "is_active": 1
+    },
+    {
+      "id": 12,
+      "code": "T",
+      "description": "Tardy",
+      "hours_limit": null,
+      "default_allocation": null,
+      "is_active": 1
+    },
+    {
+      "id": 13,
+      "code": "V",
+      "description": "Vacation",
+      "hours_limit": null,
+      "default_allocation": 80,
+      "is_active": 0
+    },
+    {
+      "id": 14,
+      "code": "WC",
+      "description": "Workers Comp",
+      "hours_limit": null,
+      "default_allocation": null,
+      "is_active": 0
+    },
+    {
+      "id": 15,
+      "code": "D",
+      "description": "Doctors Appointment",
+      "hours_limit": null,
+      "default_allocation": null,
+      "is_active": 1
+    },
+    {
+      "id": 16,
+      "code": "E",
+      "description": "Excused",
+      "hours_limit": null,
+      "default_allocation": null,
+      "is_active": 1
+    },
+    {
+      "id": 17,
+      "code": "K",
+      "description": "Termination",
+      "hours_limit": null,
+      "default_allocation": null,
+      "is_active": 1
+    },
+    {
+      "id": 18,
+      "code": "L",
+      "description": "Leave of Absense",
+      "hours_limit": null,
+      "default_allocation": null,
+      "is_active": 1
+    },
+    {
+      "id": 19,
+      "code": "LE",
+      "description": "Left Early",
+      "hours_limit": null,
+      "default_allocation": null,
+      "is_active": 1
+    },
+    {
+      "id": 20,
+      "code": "LO",
+      "description": "Layoff",
+      "hours_limit": null,
+      "default_allocation": null,
+      "is_active": 1
+    },
+    {
+      "id": 21,
+      "code": "M",
+      "description": "Military Leave",
+      "hours_limit": null,
+      "default_allocation": null,
+      "is_active": 1
+    },
+    {
+      "id": 22,
+      "code": "N",
+      "description": "No Call / No Show",
+      "hours_limit": null,
+      "default_allocation": null,
+      "is_active": 1
+    },
+    {
+      "id": 23,
+      "code": "S",
+      "description": "Suspension",
+      "hours_limit": null,
+      "default_allocation": null,
+      "is_active": 1
+    },
+    {
+      "id": 24,
+      "code": "U",
+      "description": "Unexcused",
+      "hours_limit": null,
+      "default_allocation": null,
+      "is_active": 1
+    },
+    {
+      "id": 25,
+      "code": "X",
+      "description": "Illness in family",
+      "hours_limit": null,
+      "default_allocation": null,
+      "is_active": 1
+    },
+    {
+      "id": 26,
+      "code": "Z",
+      "description": "Last Day Worked",
+      "hours_limit": null,
+      "default_allocation": null,
+      "is_active": 1
+    }
+  ]
+}

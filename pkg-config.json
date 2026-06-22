@@ -1,0 +1,10 @@
+{
+  "pkg": {
+    "assets": [
+      ".next/standalone/.next/**/*",
+      ".next/standalone/node_modules/**/*",
+      ".next/standalone/databases/**/*"
+    ],
+    "scripts": ".next/standalone/server.js"
+  }
+}

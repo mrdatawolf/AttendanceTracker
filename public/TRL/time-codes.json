@@ -1,0 +1,119 @@
+{
+  "brandId": "TRL",
+  "version": "1.0",
+  "description": "Time codes for TRL brand. These define the available time entry types and their default annual allocations.",
+  "timeCodes": [
+    {
+      "id": 1,
+      "code": "D",
+      "description": "Discipline",
+      "hours_limit": null,
+      "default_allocation": null,
+      "is_active": 1
+    },
+    {
+      "id": 2,
+      "code": "B",
+      "description": "Bereavement",
+      "hours_limit": 24,
+      "default_allocation": 24,
+      "is_active": 1
+    },
+    {
+      "id": 3,
+      "code": "FE",
+      "description": "Family Emergency",
+      "hours_limit": null,
+      "default_allocation": null,
+      "is_active": 1
+    },
+    {
+      "id": 4,
+      "code": "FM",
+      "description": "FMLA",
+      "hours_limit": null,
+      "default_allocation": null,
+      "is_active": 1
+    },
+    {
+      "id": 5,
+      "code": "H",
+      "description": "Holiday",
+      "hours_limit": null,
+      "default_allocation": null,
+      "is_active": 1
+    },
+    {
+      "id": 6,
+      "code": "JD",
+      "description": "Jury Duty",
+      "hours_limit": null,
+      "default_allocation": null,
+      "is_active": 1
+    },
+    {
+      "id": 7,
+      "code": "FH",
+      "description": "Floating Holiday",
+      "hours_limit": 24,
+      "default_allocation": 24,
+      "is_active": 1
+    },
+    {
+      "id": 8,
+      "code": "DP",
+      "description": "Designated Person",
+      "hours_limit": null,
+      "default_allocation": null,
+      "is_active": 1
+    },
+    {
+      "id": 9,
+      "code": "P",
+      "description": "Personal",
+      "hours_limit": null,
+      "default_allocation": 40,
+      "is_active": 1
+    },
+    {
+      "id": 10,
+      "code": "LOW",
+      "description": "Lack of Work",
+      "hours_limit": null,
+      "default_allocation": null,
+      "is_active": 1
+    },
+    {
+      "id": 11,
+      "code": "PS",
+      "description": "Personal Sick Day",
+      "hours_limit": 40,
+      "default_allocation": 40,
+      "is_active": 1
+    },
+    {
+      "id": 12,
+      "code": "T",
+      "description": "Tardy",
+      "hours_limit": null,
+      "default_allocation": null,
+      "is_active": 1
+    },
+    {
+      "id": 13,
+      "code": "V",
+      "description": "Vacation",
+      "hours_limit": null,
+      "default_allocation": 80,
+      "is_active": 1
+    },
+    {
+      "id": 14,
+      "code": "WC",
+      "description": "Workers Comp",
+      "hours_limit": null,
+      "default_allocation": null,
+      "is_active": 1
+    }
+  ]
+}

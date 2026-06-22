@@ -1,0 +1,62 @@
+# dependencies
+/node_modules
+/electron-app/node_modules
+/electron-app/package-lock.json
+package-lock.json
+/.pnp
+.pnp.js
+
+# testing
+/coverage
+
+# next.js
+/.next/
+/out/
+
+# production
+/build
+
+# electron build outputs
+/dist-electron
+/dist-server
+/dist-all-brands
+/temp-server-build
+
+# distribution
+/distribute
+/distribute_server
+
+# database
+*.db
+*.db-journal
+nul
+/databases
+
+# client-specific build/runtime config
+electron-builder.json
+lib/brand-selection.json
+
+# misc
+.DS_Store
+*.pem
+/examples
+/.node-portable
+/.claude
+
+# debug
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# local env files
+.env*.local
+.env
+
+# vercel
+.vercel
+
+# typescript
+*.tsbuildinfo
+next-env.d.ts
+
+.claude

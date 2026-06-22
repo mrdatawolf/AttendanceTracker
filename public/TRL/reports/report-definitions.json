@@ -1,0 +1,50 @@
+{
+  "brandId": "TRL",
+  "version": "1.0",
+  "description": "Report definitions for TRL brand",
+  "reports": [
+    {
+      "id": "attendance-summary",
+      "name": "Attendance Summary",
+      "description": "View attendance entries filtered by employee, time code, and date range",
+      "apiEndpoint": "/api/reports",
+      "isDefault": true,
+      "columns": [
+        { "key": "employee_name", "header": "Employee" },
+        { "key": "entry_date", "header": "Date" },
+        { "key": "time_code", "header": "Time Code" },
+        { "key": "hours", "header": "Hours" },
+        { "key": "notes", "header": "Notes" }
+      ],
+      "export": {
+        "csv": true,
+        "pdf": false,
+        "filename": "attendance_report"
+      }
+    },
+    {
+      "id": "break-compliance",
+      "name": "Break Compliance",
+      "description": "Break and lunch entries with compliance status per employee and day",
+      "apiEndpoint": "/api/reports/break-compliance",
+      "type": "table",
+      "isDefault": false,
+      "requiredFeature": "breakTracking",
+      "columns": [
+        { "key": "employee_name", "header": "Employee" },
+        { "key": "entry_date", "header": "Date" },
+        { "key": "break_type_label", "header": "Break Type" },
+        { "key": "start_time", "header": "Start Time" },
+        { "key": "duration_minutes", "header": "Duration (min)" },
+        { "key": "required_duration", "header": "Required (min)" },
+        { "key": "compliant", "header": "Compliant" },
+        { "key": "reason", "header": "Reason" }
+      ],
+      "export": {
+        "csv": true,
+        "pdf": false,
+        "filename": "break_compliance_report"
+      }
+    }
+  ]
+}

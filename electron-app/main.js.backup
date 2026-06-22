@@ -1,0 +1,218 @@
+const { app, BrowserWindow, ipcMain, Menu } = require('electron');
+const { spawn } = require('child_process');
+const path = require('path');
+const config = require('./config');
+const Store = require('electron-store');
+
+const store = new Store({
+  defaults: {
+    serverUrl: config.server.host
+  }
+});
+
+let mainWindow;
+let settingsWindow;
+let serverProcess;
+
+function startServer(serverUrl) {
+  const isDev = !app.isPackaged;
+  const serverPath = isDev
+    ? path.join(__dirname, '..', '.next', 'standalone', 'AttendanceTracker', 'server.js')
+    : path.join(process.resourcesPath, 'server', 'AttendanceTracker', 'server.js');
+  const serverDir = path.dirname(serverPath);
+
+  // Extract port from serverUrl
+  const url = new URL(serverUrl);
+  const port = url.port || '3000';
+  const hostname = url.hostname || '0.0.0.0';
+
+  console.log('Starting server from:', serverPath);
+  console.log('Server will listen on:', `${hostname}:${port}`);
+
+  serverProcess = spawn('node', [serverPath], {
+    cwd: serverDir,
+    stdio: 'inherit',
+    env: {
+      ...process.env,
+      PORT: port,
+      HOSTNAME: hostname
+    }
+  });
+
+  serverProcess.on('error', (err) => {
+    console.error('Failed to start server:', err);
+  });
+
+  serverProcess.on('close', (code) => {
+    console.log(`Server process exited with code ${code}`);
+  });
+}
+
+function createSettingsWindow() {
+  if (settingsWindow) {
+    settingsWindow.focus();
+    return;
+  }
+
+  settingsWindow = new BrowserWindow({
+    width: 700,
+    height: 650,
+    title: 'Settings - Attendance Management',
+    parent: mainWindow,
+    modal: true,
+    resizable: false,
+    webPreferences: {
+      preload: path.join(__dirname, 'preload.js'),
+      nodeIntegration: false,
+      contextIsolation: true
+    }
+  });
+
+  settingsWindow.loadFile(path.join(__dirname, 'settings.html'));
+  settingsWindow.setMenu(null);
+
+  settingsWindow.on('closed', () => {
+    settingsWindow = null;
+  });
+}
+
+function createWindow() {
+  mainWindow = new BrowserWindow({
+    width: config.window.width,
+    height: config.window.height,
+    title: config.window.title,
+    webPreferences: {
+      preload: path.join(__dirname, 'preload.js'),
+      nodeIntegration: false,
+      contextIsolation: true
+    }
+  });
+
+  // Create application menu with Settings option
+  const template = [
+    {
+      label: 'File',
+      submenu: [
+        {
+          label: 'Settings',
+          accelerator: 'CmdOrCtrl+,',
+          click: () => createSettingsWindow()
+        },
+        { type: 'separator' },
+        {
+          label: 'Exit',
+          accelerator: 'CmdOrCtrl+Q',
+          click: () => app.quit()
+        }
+      ]
+    },
+    {
+      label: 'View',
+      submenu: [
+        { role: 'reload' },
+        { role: 'forceReload' },
+        { type: 'separator' },
+        { role: 'toggleDevTools' }
+      ]
+    }
+  ];
+
+  const menu = Menu.buildFromTemplate(template);
+  Menu.setApplicationMenu(menu);
+
+  // Get server URL from store
+  const serverUrl = store.get('serverUrl');
+
+  // Wait a moment for server to start, then load the app
+  setTimeout(() => {
+    console.log('Connecting to:', serverUrl);
+    mainWindow.loadURL(serverUrl);
+  }, config.server.startupDelay);
+
+  mainWindow.on('closed', function () {
+    mainWindow = null;
+  });
+}
+
+// IPC handlers
+ipcMain.handle('get-server-url', () => {
+  return store.get('serverUrl');
+});
+
+ipcMain.handle('set-server-url', (event, url) => {
+  store.set('serverUrl', url);
+  return true;
+});
+
+ipcMain.on('open-settings', () => {
+  createSettingsWindow();
+});
+
+ipcMain.on('close-settings', () => {
+  if (settingsWindow) {
+    settingsWindow.close();
+  }
+});
+
+ipcMain.on('restart-app', () => {
+  console.log('Restart requested - relaunching application...');
+
+  // Kill the server process first
+  if (serverProcess) {
+    console.log('Killing server process...');
+    serverProcess.kill();
+  }
+
+  // Close all windows
+  BrowserWindow.getAllWindows().forEach(window => {
+    window.close();
+  });
+
+  // Relaunch with current arguments
+  app.relaunch({ args: process.argv.slice(1).concat(['--relaunch']) });
+
+  // Force quit
+  setTimeout(() => {
+    app.exit(0);
+  }, 100);
+});
+
+app.whenReady().then(() => {
+  // Get server URL from store
+  const serverUrl = store.get('serverUrl');
+
+  // Determine if we should start the bundled server
+  let shouldStartServer = config.server.startBundledServer;
+
+  // Auto-detect if not explicitly set
+  if (shouldStartServer === null || shouldStartServer === undefined) {
+    const url = new URL(serverUrl);
+    shouldStartServer = url.hostname === 'localhost' || url.hostname === '127.0.0.1';
+  }
+
+  if (shouldStartServer) {
+    console.log('Starting bundled server...');
+    startServer(serverUrl);
+  } else {
+    console.log('Connecting to remote server at:', serverUrl);
+  }
+
+  createWindow();
+});
+
+app.on('window-all-closed', function () {
+  // Kill the server process
+  if (serverProcess) {
+    serverProcess.kill();
+  }
+
+  if (process.platform !== 'darwin') {
+    app.quit();
+  }
+});
+
+app.on('activate', function () {
+  if (mainWindow === null) {
+    createWindow();
+  }
+});

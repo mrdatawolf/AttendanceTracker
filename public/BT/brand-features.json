@@ -1,0 +1,84 @@
+{
+  "brandId": "BT",
+  "brandURI": "http://192.168.203.241:6029",
+  "features": {
+    "leaveManagement": {
+      "enabled": true,
+       "leaveTypes": {
+        "vacation": { "enabled": true, "timeCode": "V", "label": "Vacation" },
+        "sickLeave": { "enabled": true, "timeCode": "PS", "label": "Paid Sick Leave" },
+        "floatingHoliday": { "disabled": true, "timeCode": "FH", "label": "Floating Holiday" },
+        "paidHoliday": { "enabled": false, "timeCode": "H", "label": "Holiday" },
+        "family" : { "enabled": true, "timeCode": "FM", "label": "young child or family" }
+      }
+    },
+    "approvalWorkflows": {
+      "enabled": true
+    },
+    "policyEnforcement": {
+      "enabled": true
+    },
+    "accrualCalculations": {
+      "enabled": true
+    },
+    "colorCustomization": {
+      "enabled": true,
+      "allowTimeCodeColors": true,
+      "allowStatusColors": true
+    },
+    "companyHolidays": {
+      "enabled": true,
+      "year": 2026,
+      "dates": [
+        { "date": "2026-01-01", "name": "New Year's Day" },
+        { "date": "2026-05-25", "name": "Memorial Day" },
+        { "date": "2026-07-03", "name": "Independence Day (Observed)" },
+        { "date": "2026-09-07", "name": "Labor Day" },
+        { "date": "2026-11-26", "name": "Thanksgiving" },
+        { "date": "2026-11-27", "name": "Day after Thanksgiving" },
+        { "date": "2026-12-25", "name": "Christmas Day" }
+      ]
+    },
+    "reports": {
+      "leaveBalanceSummary": {
+        "enabled": true,
+        "warningThreshold": 0.9,
+        "criticalThreshold": 1.0
+      }
+    },
+    "breakTracking": {
+      "enabled": true,
+      "breaks": {
+        "break_1": { "start": "08:00", "end": "11:00", "duration": 10 },
+        "lunch":   { "start": "12:00", "end": "14:00", "duration": 60 },
+        "break_2": { "start": "14:00", "end": "16:00", "duration": 10 }
+      },
+      "requireTimeEntry": true,
+      "graceMinutes": 10
+    },
+    "officeAttendanceForecast": {
+      "enabled": true,
+      "timeOffCodes": ["V", "PS", "FH", "PTO", "S", "FM", "B", "JD"],
+      "daysToShow": 5
+    },
+    "globalReadAccess": {
+      "enabled": true,
+      "maxOutOfOffice": 5,
+      "capacityWarningCount": 3,
+      "capacityCriticalCount": 5
+    },
+    "officePresenceTracking": {
+      "enabled": true,
+      "resetTime": "17:00"
+    },
+    "attendanceManagement": {
+      "enabled": true
+    },
+    "statusColors": {
+      "warning": "amber",
+      "critical": "red",
+      "normal": "gray"
+    },
+    "attendanceYearLayout": "table"
+  }
+}

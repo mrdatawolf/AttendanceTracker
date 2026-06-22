@@ -1,0 +1,177 @@
+{
+  "brandId": "SLI",
+  "brandURI": "http://192.168.2.203:6029",
+  "features": {
+    "leaveManagement": {
+      "enabled": true,
+      "leaveTypes": {
+        "vacation": { "enabled": true, "timeCode": "V", "label": "Vacation" },
+        "sickLeave": { "enabled": true, "timeCode": "PSL", "label": "Paid Sick Leave" },
+        "floatingHoliday": { "enabled": true, "timeCode": "FLH", "label": "Floating Holiday" },
+        "paidHoliday": { "enabled": true, "timeCode": "HL", "label": "Holiday" }
+      }
+    },
+    "approvalWorkflows": {
+      "enabled": true
+    },
+    "policyEnforcement": {
+      "enabled": true
+    },
+    "attendanceManagement": {
+      "enabled": true,
+      "timeCodeOrder": ["V", "PSL", "FLH", "BR", "FMLAUP", "HL", "JD", "PERS", "SUP", "WCP", "WCUP", "VUP", "VTO"]
+    },
+    "accrualCalculations": {
+      "enabled": true,
+      "rules": {
+        "FLH": {
+          "type": "annualGrant",
+          "maxAnnual": 24,
+          "hoursPerUnit": 8,
+          "grantDate": { "month": 6, "day": 1 },
+          "eligibility": {
+            "waitPeriod": { "years": 1 }
+          },
+          "benefitYear": { "startMonth": 6, "startDay": 1, "endMonth": 5, "endDay": 31 },
+          "prorationBrackets": [
+            { "startMonth": 6, "startDay": 1, "endMonth": 8, "endDay": 31, "units": 3 },
+            { "startMonth": 9, "startDay": 1, "endMonth": 11, "endDay": 30, "units": 2 },
+            { "startMonth": 12, "startDay": 1, "endMonth": 2, "endDay": 28, "units": 1 },
+            { "startMonth": 3, "startDay": 1, "endMonth": 5, "endDay": 31, "units": 0 }
+          ]
+        },
+        "PSL": {
+          "type": "hoursWorked",
+          "accrualRate": {
+            "earnHours": 1,
+            "perHoursWorked": 30
+          },
+          "maxAccrual": 80,
+          "maxUsage": {
+            "hours": 40,
+            "days": 5,
+            "rule": "whicheverGreater"
+          },
+          "period": "12month",
+          "eligibility": {
+            "waitPeriod": { "days": 0 }
+          },
+          "accrualExclusions": ["paidLeave", "unpaidLeave"],
+          "hoursCountedBy": {
+            "nonexempt": ["straightTime", "overtime"],
+            "exemptFullTime": { "assumedWeeklyHours": 40, "condition": "anyWorkPerformed" },
+            "exemptPartTime": "regularSchedule"
+          }
+        },
+        "V": {
+          "type": "tieredSeniority",
+          "period": {
+            "type": "custom",
+            "startMonth": 6,
+            "startDay": 1,
+            "endMonth": 5,
+            "endDay": 31
+          },
+          "eligibility": {
+            "fullTime": {
+              "hoursThreshold": 1200,
+              "includesHolidayPay": true,
+              "includesJuryDuty": true,
+              "includesFuneralLeave": true
+            },
+            "exempt": {
+              "waitPeriod": { "months": 6 },
+              "expectedUsage": 80
+            }
+          },
+          "tiers": [
+            {
+              "minBaseYears": 0,
+              "maxBaseYears": 2,
+              "fullTime": { "weeks": 1, "hours": 40 },
+              "partTime": { "earnHours": 1, "perHoursWorked": 30, "maxHours": 40 }
+            },
+            {
+              "minBaseYears": 3,
+              "maxBaseYears": 4,
+              "fullTime": { "weeks": 2, "hours": 80 },
+              "partTime": { "earnHours": 2, "perHoursWorked": 30, "maxHours": 80 }
+            },
+            {
+              "minBaseYears": 5,
+              "maxBaseYears": 7,
+              "fullTime": { "weeks": 2, "hours": 120 },
+              "partTime": { "earnHours": 3, "perHoursWorked": 30, "maxHours": 120 }
+            },
+            {
+              "minBaseYears": 8,
+              "maxBaseYears": 14,
+              "fullTime": { "weeks": 3, "hours": 160 },
+              "partTime": { "earnHours": 4, "perHoursWorked": 30, "maxHours": 160 }
+            },
+            {
+              "minBaseYears": 15,
+              "maxBaseYears": null,
+              "fullTime": { "weeks": 4, "hours": 200 },
+              "partTime": { "earnHours": 5, "perHoursWorked": 30, "maxHours": 200 }
+            }
+          ],
+          "notes": {
+            "baseYearDefinition": "Established when employee works 1,200 hours during vacation base year",
+            "payoutRule": "Unused vacation over 80 hours paid out as of May 31 each year",
+            "terminationRule": "Accrued unused vacation paid on pro-rated basis"
+          }
+        }
+      }
+    },
+    "colorCustomization": {
+      "enabled": false,
+      "allowTimeCodeColors": false,
+      "allowStatusColors": false
+    },
+    "statusColors": {
+      "warning": "amber",
+      "critical": "red",
+      "normal": "gray"
+    },
+    "companyHolidays": {
+      "enabled": false,
+      "year": 2026,
+      "dates": []
+    },
+    "reports": {
+      "leaveBalanceSummary": {
+        "enabled": false,
+        "warningThreshold": 0.9,
+        "criticalThreshold": 1.0
+      }
+    },
+    "breakTracking": {
+      "enabled": false,
+      "breaks": {
+        "break_1": { "start": "09:00", "end": "11:00", "duration": 15 },
+        "lunch":   { "start": "11:00", "end": "14:00", "duration": 30 },
+        "break_2": { "start": "14:00", "end": "16:00", "duration": 15 }
+      },
+      "requireTimeEntry": false,
+      "graceMinutes": 0
+    },
+    "officeAttendanceForecast": {
+      "enabled": false,
+      "timeOffCodes": ["V", "PSL", "FLH", "PTO", "S", "FM", "B", "JD"],
+      "daysToShow": 5
+    },
+    "globalReadAccess": {
+      "enabled": false
+    },
+    "officePresenceTracking": {
+      "enabled": false,
+      "resetTime": "17:00"
+    },
+    "bulkEntry": {
+      "enabled": true,
+      "maxDays": 90
+    },
+    "attendanceYearLayout": "table"
+  }
+}
