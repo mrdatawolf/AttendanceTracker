@@ -15,6 +15,8 @@ import { BreakEntryWidget } from '@/components/break-entry-widget';
 import { formatDateStr, getLocalToday, parseDateStr } from '@/lib/date-helpers';
 import { PageLoading } from '@/components/page-loading';
 import { getCachedData, setCachedData } from '@/lib/client-cache';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Label } from '@/components/ui/label';
 
 const PAGE_SIZE = 5;
 
@@ -24,6 +26,13 @@ interface Employee {
   last_name: string;
   employee_number?: string;
   group_id?: number;
+  is_active?: number;
+}
+
+interface Group {
+  id: number;
+  name: string;
+  is_master?: number;
 }
 
 interface AttendanceEntry {
@@ -64,6 +73,10 @@ export default function DashboardPage() {
   const [employees, setEmployees] = useState<Employee[]>([]);
   const [entries, setEntries] = useState<AttendanceEntry[]>([]);
   const [upcomingStaffingData, setUpcomingStaffingData] = useState<UpcomingStaffingEntry[]>([]);
+  const [groups, setGroups] = useState<Group[]>([]);
+  const [selectedGroupId, setSelectedGroupId] = useState<number | null>(null);
+  const [selectedInactive, setSelectedInactive] = useState(false);
+  const [inactiveEmployees, setInactiveEmployees] = useState<Employee[]>([]);
   const [loading, setLoading] = useState(true);
   const [tcPage, setTcPage] = useState(0);
   const [empPage, setEmpPage] = useState(0);
@@ -86,6 +99,26 @@ export default function DashboardPage() {
     }
   }, [isAuthenticated, pathname]);
 
+  // Lazily fetch inactive employees when the "Inactive" filter is selected
+  useEffect(() => {
+    if (!selectedInactive || !isAuthenticated || user?.group?.is_master !== 1) return;
+
+    (async () => {
+      try {
+        const res = await authFetch('/api/employees?includeInactive=true');
+        if (res.status === 401) return;
+        if (res.ok) {
+          const data = await res.json();
+          if (Array.isArray(data)) {
+            setInactiveEmployees(data.filter((e: Employee) => e.is_active === 0));
+          }
+        }
+      } catch (error) {
+        console.error('Failed to load inactive employees:', error);
+      }
+    })();
+  }, [selectedInactive, isAuthenticated]);
+
   const loadDashboardData = async () => {
     if (!isAuthenticated) {
       console.warn('Cannot load dashboard data: not authenticated');
@@ -96,11 +129,13 @@ export default function DashboardPage() {
       employees: Employee[];
       upcomingStaffingData: UpcomingStaffingEntry[];
       entries: AttendanceEntry[];
+      groups: Group[];
     }>('dashboard:data');
     if (cachedDashboard) {
       setEmployees(cachedDashboard.employees);
       setUpcomingStaffingData(cachedDashboard.upcomingStaffingData);
       setEntries(cachedDashboard.entries ?? []);
+      if (cachedDashboard.groups) setGroups(cachedDashboard.groups);
       setLoading(false);
     } else {
       setLoading(true);
@@ -112,10 +147,11 @@ export default function DashboardPage() {
       endDate.setDate(endDate.getDate() + 4);
       const endDateStr = formatDateStr(endDate);
 
-      const [employeesRes, upcomingStaffingRes, entriesRes] = await Promise.all([
+      const [employeesRes, upcomingStaffingRes, entriesRes, groupsRes] = await Promise.all([
         authFetch('/api/employees'),
         authFetch('/api/dashboard/upcoming-staffing?days=5'),
         authFetch(`/api/attendance?startDate=${todayStr}&endDate=${endDateStr}`),
+        authFetch('/api/groups'),
       ]);
 
       if (employeesRes.status === 401) {
@@ -125,6 +161,7 @@ export default function DashboardPage() {
       const employeesData = await employeesRes.json();
       const upcomingData = upcomingStaffingRes.ok ? await upcomingStaffingRes.json() : [];
       const entriesData = entriesRes.ok ? await entriesRes.json() : [];
+      const groupsData = groupsRes.ok ? await groupsRes.json() : [];
 
       if (Array.isArray(employeesData)) {
         setEmployees(employeesData);
@@ -146,10 +183,15 @@ export default function DashboardPage() {
         setEntries([]);
       }
 
+      if (Array.isArray(groupsData)) {
+        setGroups(groupsData.filter((g: Group) => !g.is_master));
+      }
+
       setCachedData('dashboard:data', {
         employees: Array.isArray(employeesData) ? employeesData : [],
         upcomingStaffingData: Array.isArray(upcomingData) ? upcomingData : [],
         entries: Array.isArray(entriesData) ? entriesData : [],
+        groups: Array.isArray(groupsData) ? groupsData.filter((g: Group) => !g.is_master) : [],
       });
     } catch (error) {
       console.error('Failed to load dashboard data:', error);
@@ -158,9 +200,20 @@ export default function DashboardPage() {
     }
   };
 
-  const totalHours = entries.reduce((sum, e) => sum + (e.hours || 0), 0);
+  // Visible groups exclude "Employees" from the filter dropdown (still selectable via "All Groups")
+  const visibleGroups = groups.filter(g => g.name !== 'Employees');
+  const isMasterUser = user?.group?.is_master === 1;
 
-  const timeCodeSummary: TimeCodeSummary[] = entries.reduce((acc, entry) => {
+  const filteredEmployees = (selectedInactive ? inactiveEmployees : employees)
+    .filter(e => !selectedGroupId || e.group_id === selectedGroupId);
+
+  const filteredEntries = (selectedGroupId || selectedInactive)
+    ? entries.filter(e => filteredEmployees.some(emp => emp.id === e.employee_id))
+    : entries;
+
+  const totalHours = filteredEntries.reduce((sum, e) => sum + (e.hours || 0), 0);
+
+  const timeCodeSummary: TimeCodeSummary[] = filteredEntries.reduce((acc, entry) => {
     const existing = acc.find(item => item.code === entry.time_code);
     if (existing) {
       existing.count++;
@@ -175,8 +228,8 @@ export default function DashboardPage() {
   const tcSafePage = Math.min(tcPage, tcTotalPages - 1);
   const tcPagedRows = timeCodeSummary.slice(tcSafePage * PAGE_SIZE, (tcSafePage + 1) * PAGE_SIZE);
 
-  const employeeSummaries: EmployeeSummary[] = employees.map(emp => {
-    const empEntries = entries.filter(e => e.employee_id === emp.id);
+  const employeeSummaries: EmployeeSummary[] = filteredEmployees.map(emp => {
+    const empEntries = filteredEntries.filter(e => e.employee_id === emp.id);
     return {
       employee: emp,
       entryCount: empEntries.length,
@@ -188,7 +241,7 @@ export default function DashboardPage() {
   const empSafePage = Math.min(empPage, empTotalPages - 1);
   const empPagedRows = employeeSummaries.slice(empSafePage * PAGE_SIZE, (empSafePage + 1) * PAGE_SIZE);
 
-  const periodEntries = [...entries]
+  const periodEntries = [...filteredEntries]
     .sort((a, b) => new Date(b.entry_date).getTime() - new Date(a.entry_date).getTime());
 
   // Compute upcoming staffing for the next 5 days
@@ -269,11 +322,43 @@ export default function DashboardPage() {
   return (
     <div className="min-h-screen p-3">
       <div className="max-w-full mx-auto space-y-3">
-        <div className="flex items-center justify-between">
+        <div className="flex items-center justify-between gap-3">
           <h1 className="text-xl font-bold">Dashboard</h1>
-          <Link href="/attendance" className="text-sm text-blue-600 hover:underline">
-            Go to Attendance →
-          </Link>
+          <div className="flex items-center gap-3">
+            {(visibleGroups.length > 1 || isMasterUser) && (
+              <div className="flex items-center gap-1.5">
+                <Label htmlFor="dashboard-group-filter" className="text-sm font-medium">Group</Label>
+                <Select
+                  value={selectedInactive ? 'inactive' : (selectedGroupId?.toString() ?? 'all')}
+                  onValueChange={(value) => {
+                    if (value === 'inactive') {
+                      setSelectedInactive(true);
+                      setSelectedGroupId(null);
+                    } else {
+                      setSelectedInactive(false);
+                      setSelectedGroupId(value === 'all' ? null : parseInt(value));
+                    }
+                  }}
+                >
+                  <SelectTrigger id="dashboard-group-filter" className="h-9 w-44 text-sm">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All Groups</SelectItem>
+                    {visibleGroups.map(g => (
+                      <SelectItem key={g.id} value={g.id.toString()}>{g.name}</SelectItem>
+                    ))}
+                    {isMasterUser && (
+                      <SelectItem value="inactive">Inactive</SelectItem>
+                    )}
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
+            <Link href="/attendance" className="text-sm text-blue-600 hover:underline whitespace-nowrap">
+              Go to Attendance →
+            </Link>
+          </div>
         </div>
 
         <HelpArea helpId="stats-cards" bubblePosition="bottom">
@@ -284,8 +369,8 @@ export default function DashboardPage() {
                 <Users className="h-4 w-4 text-muted-foreground" />
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold">{employees.length}</div>
-                <p className="text-xs text-muted-foreground">Active employees</p>
+                <div className="text-2xl font-bold">{filteredEmployees.length}</div>
+                <p className="text-xs text-muted-foreground">{selectedInactive ? 'Inactive employees' : 'Active employees'}</p>
               </CardContent>
             </Card>
 
@@ -450,7 +535,7 @@ export default function DashboardPage() {
             ) : (
               <div className="space-y-2">
                 {periodEntries.map(entry => {
-                  const employee = employees.find(e => e.id === entry.employee_id);
+                  const employee = filteredEmployees.find(e => e.id === entry.employee_id);
                   return (
                     <div key={entry.id} className="flex items-center justify-between text-sm border-b pb-2 last:border-0">
                       <div>

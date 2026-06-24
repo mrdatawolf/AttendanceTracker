@@ -98,7 +98,7 @@ export function ReportFilters({
 
   return (
     <HelpArea helpId="report-filters" bubblePosition="bottom">
-      <div className="flex flex-wrap items-end gap-4 p-3 border rounded-lg bg-muted">
+      <div className="flex flex-wrap items-end gap-4 p-3 border rounded-lg bg-muted print:hidden">
         {groups.length > 1 && onGroupChange && (
           <div className="flex flex-col flex-1 min-w-[160px] gap-1.5">
             <label className="text-sm font-medium">Group</label>
@@ -169,14 +169,14 @@ export function ReportFilters({
           </div>
         )}
 
-        <div className="flex flex-col min-w-[160px] gap-1.5">
+        <div className="flex flex-col min-w-[190px] gap-1.5">
           <label className="text-sm font-medium">Start Date</label>
-          <DatePicker date={startDate} setDate={onStartDateChange} invalid={dateRangeInvalid} className="w-[160px]" />
+          <DatePicker date={startDate} setDate={onStartDateChange} invalid={dateRangeInvalid} className="w-[190px]" />
         </div>
 
-        <div className="flex flex-col min-w-[160px] gap-1.5">
+        <div className="flex flex-col min-w-[190px] gap-1.5">
           <label className="text-sm font-medium">End Date</label>
-          <DatePicker date={endDate} setDate={onEndDateChange} invalid={dateRangeInvalid} className="w-[160px]" />
+          <DatePicker date={endDate} setDate={onEndDateChange} invalid={dateRangeInvalid} className="w-[190px]" />
         </div>
 
         <div className="flex flex-col gap-1.5">

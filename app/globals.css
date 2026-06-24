@@ -71,3 +71,34 @@
     transition: background-color 9999s ease-in-out 0s;
   }
 }
+
+/* Print-ready reports: force light theme on paper regardless of active color mode */
+@media print {
+  @page {
+    size: landscape;
+    margin: 0.5in;
+  }
+
+  html,
+  html.dark {
+    --background: 0 0% 100%;
+    --foreground: 222.2 84% 4.9%;
+    --card: 0 0% 100%;
+    --card-foreground: 222.2 84% 4.9%;
+    --muted: 210 40% 96.1%;
+    --muted-foreground: 215.4 16.3% 46.9%;
+    --border: 214.3 31.8% 91.4%;
+    color-scheme: light;
+  }
+
+  body {
+    background: white !important;
+    color: black !important;
+  }
+
+  tr,
+  td,
+  th {
+    break-inside: avoid;
+  }
+}
