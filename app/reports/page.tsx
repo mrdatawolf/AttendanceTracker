@@ -9,6 +9,7 @@ import { useAuth } from '@/lib/auth-context';
 import { ReportFilters } from '@/components/reports/report-filters';
 import { ReportTable } from '@/components/reports/report-table';
 import { ReportExport } from '@/components/reports/report-export';
+import { PrintReportButton } from '@/components/reports/print-report-button';
 import { LeaveBalanceSummary } from '@/components/reports/leave-balance-summary';
 import { LeaveBalanceExport } from '@/components/reports/leave-balance-export';
 import { AttendanceManagementReport, type AttendanceManagementData } from '@/components/reports/attendance-management-report';
@@ -379,6 +380,18 @@ export default function ReportsPage() {
     ? `${selectedReport.export.filename}.csv`
     : 'report.csv';
 
+  // Labels for the print-only filter summary on the generic Attendance Summary report
+  const printEmployeeLabel = selectedEmployeeId === 'all' || !selectedEmployeeId
+    ? 'All Employees'
+    : (() => {
+        const emp = employees.find(e => e.id.toString() === selectedEmployeeId);
+        return emp ? `${emp.last_name}, ${emp.first_name}` : 'All Employees';
+      })();
+  const printGroupLabel = selectedGroupId === 'all'
+    ? 'All Groups'
+    : (groups.find(g => g.id.toString() === selectedGroupId)?.name || 'All Groups');
+  const printTimeCodeLabel = selectedTimeCode === 'all' ? 'All Time Codes' : selectedTimeCode;
+
   if (!config.features.enableReports) {
     return (
       <div className="min-h-screen flex items-center justify-center p-8">
@@ -410,7 +423,7 @@ export default function ReportsPage() {
     <div className="min-h-screen p-3">
       <div className="max-w-full mx-auto space-y-4">
         {/* Header with Report Selector */}
-        <div className="flex items-center justify-between flex-wrap gap-4">
+        <div className="flex items-center justify-between flex-wrap gap-4 print:hidden">
           <h1 className="text-2xl font-bold">Reports</h1>
 
           {reportDefinitions.length > 1 && (
@@ -432,6 +445,11 @@ export default function ReportsPage() {
           )}
         </div>
 
+        {/* Print-only title (shows the actual selected report instead of the generic page header) */}
+        {selectedReport && (
+          <h1 className="hidden print:block text-2xl font-bold">{selectedReport.name}</h1>
+        )}
+
         {/* Report Description */}
         {selectedReport?.description && (
           <p className="text-sm text-muted-foreground">{selectedReport.description}</p>
@@ -445,7 +463,7 @@ export default function ReportsPage() {
               <h2 className="text-lg font-semibold">
                 {leaveBalanceData?.year || new Date().getFullYear()} Leave Balances
               </h2>
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-2 print:hidden">
                 <Button
                   variant="outline"
                   onClick={loadLeaveBalanceSummary}
@@ -453,6 +471,7 @@ export default function ReportsPage() {
                 >
                   {reportLoading ? 'Loading...' : 'Refresh'}
                 </Button>
+                <PrintReportButton disabled={reportLoading || !leaveBalanceData || leaveBalanceData.employees.length === 0} />
                 <LeaveBalanceExport
                   data={leaveBalanceData}
                   filename={exportFilename}
@@ -460,7 +479,7 @@ export default function ReportsPage() {
               </div>
             </div>
 
-            <div className="w-4/5 mx-auto space-y-2 [&_td]:py-1 [&_th]:py-1 [&_th]:h-auto">
+            <div className="w-4/5 mx-auto space-y-2 [&_td]:py-1 [&_th]:py-1 [&_th]:h-auto print:w-full">
               <LeaveBalanceSummary
                 data={leaveBalanceData}
                 loading={reportLoading}
@@ -492,14 +511,17 @@ export default function ReportsPage() {
               hideTimeCode={true}
               requireEmployee={true}
               actionButtons={
-                <AttendanceManagementExport
-                  data={attendanceManagementData}
-                  filename={exportFilename}
-                />
+                <>
+                  <PrintReportButton disabled={reportLoading || !attendanceManagementData} />
+                  <AttendanceManagementExport
+                    data={attendanceManagementData}
+                    filename={exportFilename}
+                  />
+                </>
               }
             />
 
-            <div className="w-3/5 mx-auto space-y-2 [&_td]:py-1 [&_th]:py-1 [&_th]:h-auto">
+            <div className="w-3/5 mx-auto space-y-2 [&_td]:py-1 [&_th]:py-1 [&_th]:h-auto print:w-full">
               <AttendanceManagementReport
                 data={attendanceManagementData}
                 loading={reportLoading}
@@ -530,14 +552,27 @@ export default function ReportsPage() {
               loading={reportLoading}
               hideTimeCode={isBreakCompliance}
               actionButtons={
-                <ReportExport
-                  data={attendanceData}
-                  filename={exportFilename}
-                />
+                <>
+                  <PrintReportButton disabled={reportLoading || attendanceData.length === 0} />
+                  <ReportExport
+                    data={attendanceData}
+                    filename={exportFilename}
+                  />
+                </>
               }
             />
 
-            <div className="w-4/5 mx-auto space-y-2 [&_td]:py-1 [&_th]:py-1 [&_th]:h-auto">
+            {/* Print-only filter summary — the filter bar above is hidden when printing */}
+            <div className="hidden print:block text-sm space-y-0.5">
+              <div><strong>Date Range:</strong> {startDate ? formatDateStr(startDate) : '—'} to {endDate ? formatDateStr(endDate) : '—'}</div>
+              <div>
+                <strong>Employee:</strong> {printEmployeeLabel}
+                {groups.length > 1 && <>&nbsp;&nbsp;<strong>Group:</strong> {printGroupLabel}</>}
+                {!isBreakCompliance && <>&nbsp;&nbsp;<strong>Time Code:</strong> {printTimeCodeLabel}</>}
+              </div>
+            </div>
+
+            <div className="w-4/5 mx-auto space-y-2 [&_td]:py-1 [&_th]:py-1 [&_th]:h-auto print:w-full">
               <ReportTable
                 columns={columns}
                 data={attendanceData}

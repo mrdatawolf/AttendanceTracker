@@ -63,7 +63,7 @@ export function Navbar() {
   const appTitle = themeConfig.branding.appTitle;
 
   return (
-    <nav className={cn('border-b sticky top-0 z-50', isNFL ? 'bg-muted' : 'bg-background')}>
+    <nav className={cn('border-b sticky top-0 z-50 print:hidden', isNFL ? 'bg-muted' : 'bg-background')}>
       <div className="max-w-full mx-auto px-3">
         <div className="flex h-10 items-center justify-between">
           <div className="flex items-center gap-3">

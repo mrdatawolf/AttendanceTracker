@@ -1,7 +1,23 @@
 # Product Roadmap - Multi-User Timesheet Application
 
-**Last Updated:** February 5, 2026
-**Current Status:** Phase 7 In Progress
+**Last Updated:** June 24, 2026
+**Current Status:** NFL Phase 1 In Progress
+
+> **Note:** The numbered Phase docs below (and the legacy `info/ROADMAP/PHASE-7-PLAN.md` / `PHASE-8-PLAN.md`) predate a codebase split and may not reflect this repo's actual history — treat them as historical reference, not an authoritative sequence. New work going forward is tracked under the **NFL Brand Enhancement Phases** section below.
+
+---
+
+## NFL Brand Enhancement Phases
+
+A set of changes requested by the NFL brand, tracked as their own phase sequence (independent of the legacy numbering above).
+
+| Phase | Status | Description |
+|-------|--------|-------------|
+| NFL-1 | **In Progress** | Attendance/Dashboard group filters ("Employees" hidden, "Inactive" added), YTD date-wrap fix |
+| NFL-2 | Approved | Print-ready PDF export for all reports (browser print stylesheet) |
+| NFL-3 | Approved | Calculated sick-leave balances for salaried employees (vs. "Check ADP") |
+
+**See:** [PHASE-NFL-1-PLAN.md](PHASE-NFL-1-PLAN.md) · [ROADMAP/PHASE-NFL-2-PLAN.md](ROADMAP/PHASE-NFL-2-PLAN.md) · [ROADMAP/PHASE-NFL-3-PLAN.md](ROADMAP/PHASE-NFL-3-PLAN.md)
 
 ---
 

@@ -36,6 +36,7 @@ interface Employee {
   email?: string;
   role: string;
   group_id?: number;
+  is_active?: number;
 }
 
 interface Group {
@@ -157,6 +158,8 @@ function AttendanceContent() {
   const [groups, setGroups] = useState<Group[]>([]);
   const [jobTitles, setJobTitles] = useState<JobTitle[]>([]);
   const [selectedGroupId, setSelectedGroupId] = useState<number | null>(null);
+  const [selectedInactive, setSelectedInactive] = useState(false);
+  const [inactiveEmployees, setInactiveEmployees] = useState<Employee[]>([]);
   const [selectedRole, setSelectedRole] = useState<string | null>(null);
   const [hideRoleFilter, setHideRoleFilter] = useState(false);
   const [allEmployeesEntries, setAllEmployeesEntries] = useState<AttendanceEntry[]>([]);
@@ -225,6 +228,26 @@ function AttendanceContent() {
       loadAllEmployeesData();
     }
   }, [viewAll, year, isAuthenticated]);
+
+  // Lazily fetch inactive employees when the "Inactive" filter is selected
+  useEffect(() => {
+    if (!selectedInactive || !isAuthenticated || user?.group?.is_master !== 1) return;
+
+    (async () => {
+      try {
+        const res = await authFetch('/api/employees?includeInactive=true');
+        if (res.status === 401) return;
+        if (res.ok) {
+          const data = await res.json();
+          if (Array.isArray(data)) {
+            setInactiveEmployees(data.filter((e: Employee) => e.is_active === 0));
+          }
+        }
+      } catch (error) {
+        console.error('Failed to load inactive employees:', error);
+      }
+    })();
+  }, [selectedInactive, isAuthenticated]);
 
   // Reload company holidays when year changes
   useEffect(() => {
@@ -629,16 +652,20 @@ function AttendanceContent() {
     ? getWeeksInMonth(currentDate.getFullYear(), currentDate.getMonth())
     : [];
 
+  // Visible groups exclude "Employees" from the filter dropdown (still selectable via "All Groups")
+  const visibleGroups = groups.filter(g => g.name !== 'Employees');
+  const isMasterUser = user?.group?.is_master === 1;
+
   // Filter employees by selected group and/or role for the "All" view
-  const filteredEmployees = employees
+  const filteredEmployees = (selectedInactive ? inactiveEmployees : employees)
     .filter(e => !selectedGroupId || e.group_id === selectedGroupId)
     .filter(e => !selectedRole || e.role === selectedRole);
 
   const uniqueRoles = hideRoleFilter ? [] : jobTitles.map(jt => jt.name);
 
-  // When viewAll, use all employees' entries (filtered by group if needed)
+  // When viewAll, use all employees' entries (filtered by group/inactive if needed)
   const activeEntries = viewAll
-    ? (selectedGroupId
+    ? ((selectedGroupId || selectedInactive)
         ? allEmployeesEntries.filter(e => filteredEmployees.some(emp => emp.id === e.employee_id))
         : allEmployeesEntries)
     : entries;
@@ -685,21 +712,32 @@ function AttendanceContent() {
             {/* Left group: employee selectors */}
             {employees.length > 0 && (
               <div className="flex flex-wrap items-end gap-4">
-                {groups.length > 1 && (
+                {(visibleGroups.length > 1 || isMasterUser) && (
                   <div className="flex flex-col gap-1.5">
                     <Label htmlFor="group-filter" className="text-sm font-medium">Group</Label>
                     <Select
-                      value={selectedGroupId?.toString() ?? 'all'}
-                      onValueChange={(value) => setSelectedGroupId(value === 'all' ? null : parseInt(value))}
+                      value={selectedInactive ? 'inactive' : (selectedGroupId?.toString() ?? 'all')}
+                      onValueChange={(value) => {
+                        if (value === 'inactive') {
+                          setSelectedInactive(true);
+                          setSelectedGroupId(null);
+                        } else {
+                          setSelectedInactive(false);
+                          setSelectedGroupId(value === 'all' ? null : parseInt(value));
+                        }
+                      }}
                     >
                       <SelectTrigger id="group-filter" className="h-9 w-44 text-sm">
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
                         <SelectItem value="all">All Groups</SelectItem>
-                        {groups.map(g => (
+                        {visibleGroups.map(g => (
                           <SelectItem key={g.id} value={g.id.toString()}>{g.name}</SelectItem>
                         ))}
+                        {isMasterUser && (
+                          <SelectItem value="inactive">Inactive</SelectItem>
+                        )}
                       </SelectContent>
                     </Select>
                   </div>
