@@ -52,13 +52,13 @@ export async function GET(request: NextRequest) {
           return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
         }
         const { password_hash, ...userWithoutPassword } = user;
-        return NextResponse.json(userWithoutPassword);
+        return NextResponse.json({ ...userWithoutPassword, has_password: !!password_hash });
       } else {
         return NextResponse.json({ error: 'User not found' }, { status: 404 });
       }
     } else {
       const users = await getAllUsers();
-      const usersWithoutPasswords = users.map(({ password_hash, ...user }) => user);
+      const usersWithoutPasswords = users.map(({ password_hash, ...user }) => ({ ...user, has_password: !!password_hash }));
       // Managers only see users in their own group
       if (!hasFullUserAccess && isManagerRole) {
         return NextResponse.json(usersWithoutPasswords.filter(u => u.group_id === authUser.group_id));
@@ -260,7 +260,7 @@ export async function PUT(request: NextRequest) {
 
     if (updatedUser) {
       const { password_hash, ...userWithoutPassword } = updatedUser;
-      return NextResponse.json(userWithoutPassword);
+      return NextResponse.json({ ...userWithoutPassword, has_password: !!password_hash });
     }
 
     return NextResponse.json({ error: 'Failed to fetch updated user' }, { status: 500 });

@@ -25,11 +25,11 @@ import { OfficePresenceBar } from '@/components/office-presence-bar';
 import { ChangePasswordDialog } from '@/components/change-password-dialog';
 
 const NAV_ITEMS = [
+  { href: '/dashboard', label: 'Dashboard', enabled: config.features.enableDashboard, superuserOnly: false },
   { href: '/attendance', label: 'Attendance', enabled: true, superuserOnly: false },
+  { href: '/reports', label: 'Reports', enabled: config.features.enableReports, superuserOnly: false },
   { href: '/employees', label: 'Employees', enabled: true, superuserOnly: false },
   { href: '/users', label: 'Users', enabled: true, superuserOnly: true },
-  { href: '/dashboard', label: 'Dashboard', enabled: config.features.enableDashboard, superuserOnly: false },
-  { href: '/reports', label: 'Reports', enabled: config.features.enableReports, superuserOnly: false },
 ];
 
 export function Navbar() {

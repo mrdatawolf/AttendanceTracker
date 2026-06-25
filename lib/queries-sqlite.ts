@@ -14,6 +14,7 @@ export interface Employee {
   seniority_rank?: number;   // 1-5 (tiebreaker for same hire dates)
   abbreviation?: string;     // 1-3 char unique identifier for office presence
   show_in_office_presence?: number; // 1 = shown (default), 0 = hidden
+  is_salaried_psl?: number; // 1 = use calculated PSL balance, 0 = "Check ADP" (default)
   created_by?: number;
   is_active: number;
 }
@@ -52,8 +53,8 @@ export async function getEmployeeById(id: number): Promise<Employee | null> {
 
 export async function createEmployee(employee: Omit<Employee, 'id'>): Promise<Employee> {
   const result = await db.execute({
-    sql: `INSERT INTO employees (employee_number, first_name, last_name, email, role, group_id, date_of_hire, rehire_date, employment_type, seniority_rank, abbreviation, show_in_office_presence, created_by, is_active)
-          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+    sql: `INSERT INTO employees (employee_number, first_name, last_name, email, role, group_id, date_of_hire, rehire_date, employment_type, seniority_rank, abbreviation, show_in_office_presence, is_salaried_psl, created_by, is_active)
+          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
     args: [
       employee.employee_number || null,
       employee.first_name,
@@ -67,6 +68,7 @@ export async function createEmployee(employee: Omit<Employee, 'id'>): Promise<Em
       employee.seniority_rank || null,
       employee.abbreviation || null,
       employee.show_in_office_presence ?? 1,
+      employee.is_salaried_psl ?? 0,
       employee.created_by || null,
       employee.is_active,
     ],

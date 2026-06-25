@@ -144,7 +144,7 @@ export default function DashboardPage() {
     try {
       const todayStr = getLocalToday();
       const endDate = new Date(parseDateStr(todayStr));
-      endDate.setDate(endDate.getDate() + 4);
+      endDate.setDate(endDate.getDate() + 13);
       const endDateStr = formatDateStr(endDate);
 
       const [employeesRes, upcomingStaffingRes, entriesRes, groupsRes] = await Promise.all([
@@ -381,7 +381,7 @@ export default function DashboardPage() {
               </CardHeader>
               <CardContent>
                 <div className="text-2xl font-bold">{entries.length}</div>
-                <p className="text-xs text-muted-foreground">Next 5 days</p>
+                <p className="text-xs text-muted-foreground">Next 14 days</p>
               </CardContent>
             </Card>
 
@@ -392,7 +392,7 @@ export default function DashboardPage() {
               </CardHeader>
               <CardContent>
                 <div className="text-2xl font-bold">{totalHours.toFixed(1)}</div>
-                <p className="text-xs text-muted-foreground">Next 5 days</p>
+                <p className="text-xs text-muted-foreground">Next 14 days</p>
               </CardContent>
             </Card>
 
@@ -403,7 +403,7 @@ export default function DashboardPage() {
               </CardHeader>
               <CardContent>
                 <div className="text-2xl font-bold">{timeCodeSummary.length}</div>
-                <p className="text-xs text-muted-foreground">Next 5 days</p>
+                <p className="text-xs text-muted-foreground">Next 14 days</p>
               </CardContent>
             </Card>
           </div>
@@ -451,7 +451,7 @@ export default function DashboardPage() {
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <HelpArea helpId="time-code-usage" bubblePosition="right">
-                <CardTitle className="text-base cursor-help">Time Code Usage <span className="text-xs font-normal text-muted-foreground">(Next 5 Days)</span></CardTitle>
+                <CardTitle className="text-base cursor-help">Time Code Usage <span className="text-xs font-normal text-muted-foreground">(Next 14 Days)</span></CardTitle>
               </HelpArea>
               {timeCodeSummary.length > PAGE_SIZE && (
                 <div className="flex items-center gap-1">
@@ -487,7 +487,7 @@ export default function DashboardPage() {
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <HelpArea helpId="employee-summary" bubblePosition="left">
-                <CardTitle className="text-base cursor-help">Employee Summary <span className="text-xs font-normal text-muted-foreground">(Next 5 Days)</span></CardTitle>
+                <CardTitle className="text-base cursor-help">Employee Summary <span className="text-xs font-normal text-muted-foreground">(Next 14 Days)</span></CardTitle>
               </HelpArea>
               {employeeSummaries.length > PAGE_SIZE && (
                 <div className="flex items-center gap-1">
@@ -526,7 +526,7 @@ export default function DashboardPage() {
         <Card>
           <CardHeader>
             <HelpArea helpId="recent-entries" bubblePosition="bottom">
-              <CardTitle className="text-base cursor-help">Entries (Next 5 Days)</CardTitle>
+              <CardTitle className="text-base cursor-help">Entries (Next 14 Days)</CardTitle>
             </HelpArea>
           </CardHeader>
           <CardContent>

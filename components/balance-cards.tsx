@@ -83,6 +83,7 @@ interface TimeAllocation {
   is_override: boolean;
   is_accrual?: boolean;
   accrual_details?: AccrualDetails | null;
+  is_salaried_psl?: number;
 }
 
 interface BalanceCardsProps {
@@ -348,7 +349,13 @@ export function BalanceCards({ entries, allocations, employeeId }: BalanceCardsP
     const label = config.label || defaultLabel;
     const used = calculateUsage(timeCode);
     const limit = config.annualUsageLimit ?? getAllocatedHours(timeCode);
-    const hasCustomBalanceText = !!config.availableBalanceText;
+    // Salaried employees get a calculated PSL balance instead of the "Check ADP"
+    // text — the estimate is reliable for exempt full-time (assumed 40h/week),
+    // unlike hourly employees whose real hours worked aren't tracked here.
+    const isSalariedPslOverride = key === 'sickLeave'
+      && !!allocations.find(a => a.time_code === timeCode)?.is_salaried_psl;
+    const effectiveBalanceText = isSalariedPslOverride ? undefined : config.availableBalanceText;
+    const hasCustomBalanceText = !!effectiveBalanceText;
     const remaining = Math.max(0, limit - used);
     const colorClasses = getUsageColorClasses(used, limit);
 
@@ -356,14 +363,14 @@ export function BalanceCards({ entries, allocations, employeeId }: BalanceCardsP
       <div
         key={key}
         className={`flex-1 min-w-[150px] border rounded-lg p-2 cursor-pointer hover:opacity-80 transition-all ${colorClasses.card || 'bg-card'}`}
-        onClick={() => openModal(timeCode, label, config.availableBalanceText, config.annualUsageLimit)}
+        onClick={() => openModal(timeCode, label, effectiveBalanceText, config.annualUsageLimit)}
         title="Click to see breakdown"
       >
         <div className="text-xs font-medium text-muted-foreground mb-0.5">
           Current {label}
         </div>
         <div className="text-lg font-bold">
-          {hasCustomBalanceText ? config.availableBalanceText : `${remaining}h`}
+          {hasCustomBalanceText ? effectiveBalanceText : `${remaining}h`}
         </div>
         {!hasCustomBalanceText && (
           <>

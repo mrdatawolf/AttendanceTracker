@@ -268,6 +268,7 @@ export async function POST(request: NextRequest) {
       seniority_rank: body.seniority_rank,
       abbreviation: body.abbreviation,
       show_in_office_presence: body.show_in_office_presence,
+      is_salaried_psl: body.is_salaried_psl,
       created_by: authUser.id,
       is_active: 1
     });
@@ -291,6 +292,7 @@ export async function POST(request: NextRequest) {
         seniority_rank: newEmployee.seniority_rank,
         abbreviation: newEmployee.abbreviation,
         show_in_office_presence: newEmployee.show_in_office_presence,
+        is_salaried_psl: newEmployee.is_salaried_psl,
       }),
       ip_address: getClientIP(request),
       user_agent: getUserAgent(request),
@@ -470,6 +472,11 @@ export async function PUT(request: NextRequest) {
       args.push(body.show_in_office_presence);
     }
 
+    if (body.is_salaried_psl !== undefined) {
+      updates.push('is_salaried_psl = ?');
+      args.push(body.is_salaried_psl);
+    }
+
     if (body.is_active !== undefined) {
       updates.push('is_active = ?');
       args.push(body.is_active);
@@ -512,6 +519,7 @@ export async function PUT(request: NextRequest) {
         seniority_rank: oldEmployee.seniority_rank,
         abbreviation: oldEmployee.abbreviation,
         show_in_office_presence: oldEmployee.show_in_office_presence,
+        is_salaried_psl: oldEmployee.is_salaried_psl,
         is_active: oldEmployee.is_active,
       }),
       new_values: JSON.stringify({
@@ -527,6 +535,7 @@ export async function PUT(request: NextRequest) {
         seniority_rank: updatedEmployee?.seniority_rank,
         abbreviation: updatedEmployee?.abbreviation,
         show_in_office_presence: updatedEmployee?.show_in_office_presence,
+        is_salaried_psl: updatedEmployee?.is_salaried_psl,
         is_active: updatedEmployee?.is_active,
       }),
       ip_address: getClientIP(request),

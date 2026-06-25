@@ -28,7 +28,7 @@ export async function GET(request: NextRequest) {
 
     // Get employee's hire date, rehire date, and employment type for accrual calculations
     const employeeResult = await db.execute({
-      sql: 'SELECT date_of_hire, rehire_date, employment_type FROM employees WHERE id = ?',
+      sql: 'SELECT date_of_hire, rehire_date, employment_type, is_salaried_psl FROM employees WHERE id = ?',
       args: [parseInt(employeeId)]
     });
     const hireDate = employeeResult.rows.length > 0
@@ -40,6 +40,9 @@ export async function GET(request: NextRequest) {
     const employmentType = employeeResult.rows.length > 0
       ? (employeeResult.rows[0] as any).employment_type
       : null;
+    const isSalariedPsl = employeeResult.rows.length > 0
+      ? (employeeResult.rows[0] as any).is_salaried_psl
+      : 0;
 
     // Try to get time codes from brand JSON first
     const brandTimeCodes = getBrandTimeCodes();
@@ -93,6 +96,7 @@ export async function GET(request: NextRequest) {
           is_override: !!override,
           is_accrual: !override && !!accrualRule,
           accrual_details: accrualDetails,
+          is_salaried_psl: isSalariedPsl,
           notes: override ? (override as any).notes : null
         };
       });
@@ -136,6 +140,7 @@ export async function GET(request: NextRequest) {
           is_override: !!override,
           is_accrual: !override && !!accrualRule,
           accrual_details: accrualDetails,
+          is_salaried_psl: isSalariedPsl,
           notes: override?.notes || null
         };
       });

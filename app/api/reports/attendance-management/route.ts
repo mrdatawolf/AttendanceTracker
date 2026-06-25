@@ -10,12 +10,15 @@ export const dynamic = 'force-dynamic';
 
 const DAY_NAMES = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
 
-function getSpecialAvailability(brandFeatures: any): Record<string, { text: string; usageLimit: number | null }> {
+// Salaried employees get a calculated PSL balance instead of "Check ADP" — see
+// is_salaried_psl on the employees table and Phase NFL-3.
+function getSpecialAvailability(brandFeatures: any, isSalariedPsl: boolean): Record<string, { text: string; usageLimit: number | null }> {
   const result: Record<string, { text: string; usageLimit: number | null }> = {};
   const leaveTypes = brandFeatures?.features?.leaveManagement?.leaveTypes;
   if (!leaveTypes) return result;
 
-  for (const config of Object.values(leaveTypes) as any[]) {
+  for (const [key, config] of Object.entries(leaveTypes) as [string, any][]) {
+    if (key === 'sickLeave' && isSalariedPsl) continue;
     if (config?.enabled && config?.timeCode && config?.availableBalanceText) {
       result[config.timeCode] = {
         text: config.availableBalanceText,
@@ -57,7 +60,7 @@ export async function GET(request: NextRequest) {
 
     // Get employee details
     const empResult = await db.execute({
-      sql: 'SELECT id, first_name, last_name, group_id, date_of_hire, rehire_date, employment_type FROM employees WHERE id = ? AND is_active = 1',
+      sql: 'SELECT id, first_name, last_name, group_id, date_of_hire, rehire_date, employment_type, is_salaried_psl FROM employees WHERE id = ? AND is_active = 1',
       args: [empId],
     });
     const employee = empResult.rows[0] as unknown as {
@@ -68,6 +71,7 @@ export async function GET(request: NextRequest) {
       date_of_hire: string | null;
       rehire_date: string | null;
       employment_type: 'full_time' | 'part_time' | null;
+      is_salaried_psl: number | null;
     } | undefined;
 
     if (!employee) {
@@ -166,7 +170,7 @@ export async function GET(request: NextRequest) {
       }
     }
 
-    const specialAvailability = getSpecialAvailability(brandFeatures);
+    const specialAvailability = getSpecialAvailability(brandFeatures, !!employee.is_salaried_psl);
 
     const summary = activeTimeCodes.map(tc => {
       const stats = summaryMap.get(tc.code) || { days: 0, hoursUsed: 0 };

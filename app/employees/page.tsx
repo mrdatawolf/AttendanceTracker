@@ -52,6 +52,7 @@ interface Employee {
   seniority_rank?: number;
   abbreviation?: string;
   show_in_office_presence?: number;
+  is_salaried_psl?: number;
   created_by?: number;
   is_active: number;
 }
@@ -108,6 +109,7 @@ export default function UsersPage() {
     seniority_rank: '',
     abbreviation: '',
     show_in_office_presence: '1',
+    is_salaried_psl: '0',
   });
 
   useEffect(() => {
@@ -194,6 +196,7 @@ export default function UsersPage() {
         seniority_rank: employee.seniority_rank?.toString() || '',
         abbreviation: employee.abbreviation || '',
         show_in_office_presence: (employee.show_in_office_presence ?? 1).toString(),
+        is_salaried_psl: (employee.is_salaried_psl ?? 0).toString(),
       });
     } else {
       setEditingEmployee(null);
@@ -210,6 +213,7 @@ export default function UsersPage() {
         seniority_rank: '',
         abbreviation: '',
         show_in_office_presence: '1',
+        is_salaried_psl: '0',
       });
     }
     setIsDialogOpen(true);
@@ -232,6 +236,7 @@ export default function UsersPage() {
       seniority_rank: formData.seniority_rank ? parseInt(formData.seniority_rank) : null,
       abbreviation: formData.abbreviation || null,
       show_in_office_presence: parseInt(formData.show_in_office_presence),
+      is_salaried_psl: parseInt(formData.is_salaried_psl),
     };
 
     try {
@@ -794,7 +799,7 @@ export default function UsersPage() {
             </div>
 
             {leaveManagementEnabled && (
-              <div className="grid grid-cols-3 gap-4">
+              <div className="grid grid-cols-4 gap-4">
                 <div className="space-y-2">
                   <Label htmlFor="employment_type">Employment Type</Label>
                   <Select
@@ -838,6 +843,24 @@ export default function UsersPage() {
                     }
                     placeholder="Optional"
                   />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="is_salaried_psl">Salaried (calculate PSL balance)</Label>
+                  <Select
+                    value={formData.is_salaried_psl}
+                    onValueChange={(value) =>
+                      setFormData({ ...formData, is_salaried_psl: value })
+                    }
+                  >
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="0">No (Check ADP)</SelectItem>
+                      <SelectItem value="1">Yes (calculated balance)</SelectItem>
+                    </SelectContent>
+                  </Select>
                 </div>
               </div>
             )}

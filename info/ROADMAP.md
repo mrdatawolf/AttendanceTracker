@@ -16,8 +16,9 @@ A set of changes requested by the NFL brand, tracked as their own phase sequence
 | NFL-1 | **In Progress** | Attendance/Dashboard group filters ("Employees" hidden, "Inactive" added), YTD date-wrap fix |
 | NFL-2 | Approved | Print-ready PDF export for all reports (browser print stylesheet) |
 | NFL-3 | Approved | Calculated sick-leave balances for salaried employees (vs. "Check ADP") |
+| NFL-4 | Approved | Dashboard zero-value fix, password-set indicator on Users, nav tab reorder |
 
-**See:** [PHASE-NFL-1-PLAN.md](PHASE-NFL-1-PLAN.md) · [ROADMAP/PHASE-NFL-2-PLAN.md](ROADMAP/PHASE-NFL-2-PLAN.md) · [ROADMAP/PHASE-NFL-3-PLAN.md](ROADMAP/PHASE-NFL-3-PLAN.md)
+**See:** [PHASE-NFL-1-PLAN.md](PHASE-NFL-1-PLAN.md) · [ROADMAP/PHASE-NFL-2-PLAN.md](ROADMAP/PHASE-NFL-2-PLAN.md) · [ROADMAP/PHASE-NFL-3-PLAN.md](ROADMAP/PHASE-NFL-3-PLAN.md) · [ROADMAP/PHASE-NFL-4-PLAN.md](ROADMAP/PHASE-NFL-4-PLAN.md)
 
 ---
 

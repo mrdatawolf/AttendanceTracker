@@ -54,6 +54,7 @@ interface User {
   last_login?: string;
   group?: Group;
   role?: Role;
+  has_password?: boolean;
 }
 
 interface Group {
@@ -510,7 +511,7 @@ export default function UsersPage() {
 
               <div className="space-y-2">
                 <Label htmlFor="password">
-                  Password {editingUser && <span className="text-xs text-muted-foreground">(leave blank to keep current)</span>}
+                  Password {editingUser && <span className="text-xs text-muted-foreground">(leave blank/with *** to keep current)</span>}
                   {!editingUser && <span className="text-red-500">*</span>}
                 </Label>
                 <Input
@@ -520,6 +521,7 @@ export default function UsersPage() {
                   onChange={(e) =>
                     setFormData({ ...formData, password: e.target.value })
                   }
+                  placeholder={editingUser?.has_password ? '*****' : undefined}
                   required={!editingUser}
                   autoComplete="new-password"
                 />

@@ -29,6 +29,7 @@ export async function initializeDatabase() {
       seniority_rank INTEGER,
       abbreviation TEXT,
       show_in_office_presence INTEGER DEFAULT 1,
+      is_salaried_psl INTEGER DEFAULT 0,
       created_by INTEGER,
       is_active INTEGER DEFAULT 1,
       created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
@@ -96,6 +97,14 @@ export async function initializeDatabase() {
   try {
     await db.execute(`ALTER TABLE employees ADD COLUMN show_in_office_presence INTEGER DEFAULT 1`);
     console.log('  ✓ Added show_in_office_presence column to employees table');
+  } catch (error) {
+    // Column already exists, ignore error
+  }
+
+  // Add is_salaried_psl column if it doesn't exist (for existing databases)
+  try {
+    await db.execute(`ALTER TABLE employees ADD COLUMN is_salaried_psl INTEGER DEFAULT 0`);
+    console.log('  ✓ Added is_salaried_psl column to employees table');
   } catch (error) {
     // Column already exists, ignore error
   }
