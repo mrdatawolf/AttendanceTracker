@@ -1,0 +1,80 @@
+{
+  "brandId": "Default",
+  "brandURI": "http://127.0.0.1:6029",
+  "DemoMode": false,
+  "features": {
+    "leaveManagement": {
+      "enabled": true,
+      "leaveTypes": {
+        "vacation": { "enabled": true, "timeCode": "V", "label": "Vacation" },
+        "sickLeave": { "enabled": true, "timeCode": "PS", "label": "Paid Sick Leave", "availableBalanceText": "Check ADP", "annualUsageLimit": 40 },
+        "floatingHoliday": { "enabled": true, "timeCode": "FH", "label": "Floating Holiday" },
+        "paidHoliday": { "enabled": true, "timeCode": "H", "label": "Holiday" }
+      }
+    },
+    "approvalWorkflows": {
+      "enabled": true
+    },
+    "policyEnforcement": {
+      "enabled": true
+    },
+    "accrualCalculations": {
+      "enabled": true
+    },
+    "colorCustomization": {
+      "enabled": true,
+      "allowTimeCodeColors": true,
+      "allowStatusColors": true
+    },
+    "statusColors": {
+      "warning": "amber",
+      "critical": "red",
+      "normal": "gray"
+    },
+    "breakTracking": {
+      "enabled": false,
+      "breaks": {
+        "break_1": { "start": "09:00", "end": "11:00", "duration": 15 },
+        "lunch":   { "start": "11:00", "end": "14:00", "duration": 30 },
+        "break_2": { "start": "14:00", "end": "16:00", "duration": 15 }
+      },
+      "requireTimeEntry": false,
+      "graceMinutes": 5
+    },
+    "officeAttendanceForecast": {
+      "enabled": false,
+      "timeOffCodes": ["V", "PS", "FH", "PTO", "S", "FM", "B", "JD"],
+      "daysToShow": 5
+    },
+    "globalReadAccess": {
+      "enabled": false
+    },
+    "companyHolidays": {
+      "enabled": true,
+      "year": 2026,
+      "dates": [
+        { "date": "2026-01-01", "name": "New Year's Day" },
+        { "date": "2026-05-25", "name": "Memorial Day" },
+        { "date": "2026-07-04", "name": "Independence Day" },
+        { "date": "2026-09-07", "name": "Labor Day" },
+        { "date": "2026-11-26", "name": "Thanksgiving" },
+        { "date": "2026-12-25", "name": "Christmas Day" }
+      ]
+    },
+    "reports": {
+      "leaveBalanceSummary": {
+        "enabled": true,
+        "warningThreshold": 0.9,
+        "criticalThreshold": 1.0
+      }
+    },
+    "officePresenceTracking": {
+      "enabled": true,
+      "resetTime": "17:00"
+    },
+    "attendanceManagement": {
+      "enabled": true
+    },
+    "attendanceYearLayout": "table"
+  }
+}
