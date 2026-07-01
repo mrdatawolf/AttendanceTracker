@@ -22,7 +22,6 @@
     },
     "attendanceManagement": {
       "enabled": true,
-      "hideRoleFilter": true,
       "timeCodeOrder": ["VAC", "FLH", "PSL", "SUP", "PER", "LA", "LE", "HOL", "BRP", "BRU", "JD", "VTO", "FMLA", "WC"]
     },
     "accrualCalculations": {

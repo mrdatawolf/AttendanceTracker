@@ -17,9 +17,12 @@ export async function GET(request: NextRequest) {
 
     const { searchParams } = new URL(request.url);
     const employeeId = searchParams.get('employeeId') || 'all';
+    const groupId = searchParams.get('groupId') || 'all';
     const timeCode = searchParams.get('timeCode') || 'all';
     const startDate = searchParams.get('startDate');
     const endDate = searchParams.get('endDate');
+    // Only master-group users may pull inactive (former) employees into a report
+    const showInactive = searchParams.get('inactive') === 'true' && authUser.group?.is_master === 1;
 
     if (!startDate || !endDate) {
       return NextResponse.json({ error: 'Start date and end date are required' }, { status: 400 });
@@ -44,10 +47,10 @@ export async function GET(request: NextRequest) {
       FROM attendance_entries te
       JOIN employees e ON te.employee_id = e.id
       WHERE te.entry_date >= ? AND te.entry_date <= ?
-        AND e.is_active = 1
+        AND e.is_active = ?
     `;
 
-    const args: any[] = [startDate, endDate];
+    const args: any[] = [startDate, endDate, showInactive ? 0 : 1];
 
     // Filter by user's readable groups if not superuser and global read not enabled
     if (!userIsSuperuser && !globalRead) {
@@ -70,6 +73,11 @@ export async function GET(request: NextRequest) {
     if (employeeId !== 'all') {
       sql += ' AND te.employee_id = ?';
       args.push(parseInt(employeeId));
+    }
+
+    if (groupId !== 'all') {
+      sql += ' AND e.group_id = ?';
+      args.push(parseInt(groupId));
     }
 
     if (timeCode !== 'all') {

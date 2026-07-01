@@ -34,7 +34,6 @@ interface Employee {
   last_name: string;
   employee_number?: string;
   email?: string;
-  role: string;
   group_id?: number;
   is_active?: number;
 }
@@ -43,11 +42,6 @@ interface Group {
   id: number;
   name: string;
   is_master?: number;
-}
-
-interface JobTitle {
-  id: number;
-  name: string;
 }
 
 interface TimeCode {
@@ -156,12 +150,9 @@ function AttendanceContent() {
   const [bulkEntryEnabled, setBulkEntryEnabled] = useState(false);
   const [viewAll, setViewAll] = useState(false);
   const [groups, setGroups] = useState<Group[]>([]);
-  const [jobTitles, setJobTitles] = useState<JobTitle[]>([]);
   const [selectedGroupId, setSelectedGroupId] = useState<number | null>(null);
   const [selectedInactive, setSelectedInactive] = useState(false);
   const [inactiveEmployees, setInactiveEmployees] = useState<Employee[]>([]);
-  const [selectedRole, setSelectedRole] = useState<string | null>(null);
-  const [hideRoleFilter, setHideRoleFilter] = useState(false);
   const [allEmployeesEntries, setAllEmployeesEntries] = useState<AttendanceEntry[]>([]);
   const { toast } = useToast();
   const { theme: themeId } = useTheme();
@@ -296,19 +287,16 @@ function AttendanceContent() {
       setGlobalReadEnabled(isGlobalReadAccessEnabled(brandFeatures));
       setYearLayout(getAttendanceYearLayout(brandFeatures));
       setBulkEntryEnabled(getBulkEntryConfig(brandFeatures).enabled);
-      setHideRoleFilter(brandFeatures.features.attendanceManagement?.hideRoleFilter ?? false);
 
       const cachedInitial = getCachedData<{
         employees: Employee[];
         timeCodes: TimeCode[];
         groups: Group[];
-        jobTitles: JobTitle[];
       }>('attendance:initial');
       if (cachedInitial) {
         setEmployees(cachedInitial.employees);
         setTimeCodes(cachedInitial.timeCodes);
         if (cachedInitial.groups) setGroups(cachedInitial.groups);
-        if (cachedInitial.jobTitles) setJobTitles(cachedInitial.jobTitles);
         if (cachedInitial.employees.length > 0 && !selectedEmployeeId) {
           if (cachedInitial.employees.length > 1) {
             setViewAll(true);
@@ -324,11 +312,10 @@ function AttendanceContent() {
         setLoading(false);
       }
 
-      const [employeesRes, timeCodesRes, groupsRes, jobTitlesRes] = await Promise.all([
+      const [employeesRes, timeCodesRes, groupsRes] = await Promise.all([
         authFetch('/api/employees'),
         authFetch('/api/time-codes'),
         authFetch('/api/groups'),
-        authFetch('/api/job-titles?active=true'),
       ]);
 
       // If redirected to login due to expired session, stop processing
@@ -339,16 +326,11 @@ function AttendanceContent() {
       const employeesData = await employeesRes.json();
       const timeCodesData = await timeCodesRes.json();
       const groupsData = groupsRes.ok ? await groupsRes.json() : [];
-      const jobTitlesData = jobTitlesRes.ok ? await jobTitlesRes.json() : [];
 
       // Validate that we received arrays
       if (Array.isArray(groupsData)) {
         // Exclude master groups from the filter (they're admin-only)
         setGroups(groupsData.filter((g: Group) => !g.is_master));
-      }
-
-      if (Array.isArray(jobTitlesData)) {
-        setJobTitles(jobTitlesData);
       }
 
       if (Array.isArray(employeesData)) {
@@ -385,7 +367,6 @@ function AttendanceContent() {
         employees: Array.isArray(employeesData) ? employeesData : [],
         timeCodes: Array.isArray(timeCodesData) ? timeCodesData : [],
         groups: Array.isArray(groupsData) ? groupsData.filter((g: Group) => !g.is_master) : [],
-        jobTitles: Array.isArray(jobTitlesData) ? jobTitlesData : [],
       });
     } catch (error) {
       console.error('Failed to load initial data:', error);
@@ -656,12 +637,9 @@ function AttendanceContent() {
   const visibleGroups = groups.filter(g => g.name !== 'Employees');
   const isMasterUser = user?.group?.is_master === 1;
 
-  // Filter employees by selected group and/or role for the "All" view
+  // Filter employees by selected group for the "All" view
   const filteredEmployees = (selectedInactive ? inactiveEmployees : employees)
-    .filter(e => !selectedGroupId || e.group_id === selectedGroupId)
-    .filter(e => !selectedRole || e.role === selectedRole);
-
-  const uniqueRoles = hideRoleFilter ? [] : jobTitles.map(jt => jt.name);
+    .filter(e => !selectedGroupId || e.group_id === selectedGroupId);
 
   // When viewAll, use all employees' entries (filtered by group/inactive if needed)
   const activeEntries = viewAll
@@ -738,26 +716,6 @@ function AttendanceContent() {
                         {isMasterUser && (
                           <SelectItem value="inactive">Inactive</SelectItem>
                         )}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                )}
-
-                {uniqueRoles.length > 1 && (
-                  <div className="flex flex-col gap-1.5">
-                    <Label htmlFor="role-filter" className="text-sm font-medium">Role</Label>
-                    <Select
-                      value={selectedRole ?? 'all'}
-                      onValueChange={(value) => setSelectedRole(value === 'all' ? null : value)}
-                    >
-                      <SelectTrigger id="role-filter" className="h-9 w-44 text-sm">
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="all">All Roles</SelectItem>
-                        {uniqueRoles.map(r => (
-                          <SelectItem key={r} value={r}>{r}</SelectItem>
-                        ))}
                       </SelectContent>
                     </Select>
                   </div>

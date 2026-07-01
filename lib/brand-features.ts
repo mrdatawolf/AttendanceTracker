@@ -129,7 +129,6 @@ export interface BrandFeatures {
     attendanceManagement?: {
       enabled: boolean;
       timeCodeOrder?: string[];  // Display order for summary rows (time code strings). Unlisted codes appear at the end.
-      hideRoleFilter?: boolean;  // When true, suppresses the role/job-title filter on attendance and reports pages.
     };
     bulkEntry?: BulkEntryConfig;
     attendanceYearLayout?: 'table' | 'calendar';  // Year view layout: 'table' (default 12x31 grid) or 'calendar' (12 month cards)

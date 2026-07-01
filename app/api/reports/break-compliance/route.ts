@@ -35,8 +35,11 @@ export async function GET(request: NextRequest) {
 
     const { searchParams } = new URL(request.url);
     const employeeId = searchParams.get('employeeId') || 'all';
+    const groupId = searchParams.get('groupId') || 'all';
     const startDate = searchParams.get('startDate');
     const endDate = searchParams.get('endDate');
+    // Only master-group users may pull inactive (former) employees into a report
+    const showInactive = searchParams.get('inactive') === 'true' && authUser.group?.is_master === 1;
 
     if (!startDate || !endDate) {
       return NextResponse.json(
@@ -63,10 +66,10 @@ export async function GET(request: NextRequest) {
       FROM break_entries b
       JOIN employees e ON b.employee_id = e.id
       WHERE b.entry_date >= ? AND b.entry_date <= ?
-        AND e.is_active = 1
+        AND e.is_active = ?
     `;
 
-    const args: any[] = [startDate, endDate];
+    const args: any[] = [startDate, endDate, showInactive ? 0 : 1];
 
     // Filter by user's readable groups if not superuser and global read not enabled
     if (!userIsSuperuser && !globalRead) {
@@ -88,6 +91,11 @@ export async function GET(request: NextRequest) {
     if (employeeId !== 'all') {
       sql += ' AND b.employee_id = ?';
       args.push(parseInt(employeeId));
+    }
+
+    if (groupId !== 'all') {
+      sql += ' AND e.group_id = ?';
+      args.push(parseInt(groupId));
     }
 
     sql += ' ORDER BY b.entry_date, employee_name, b.break_type';

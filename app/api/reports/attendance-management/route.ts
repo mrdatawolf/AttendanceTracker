@@ -58,9 +58,10 @@ export async function GET(request: NextRequest) {
     const brandFeatures = await getBrandFeatures();
     const globalRead = isGlobalReadAccessEnabled(brandFeatures);
 
-    // Get employee details
+    // Get employee details. Inactive (former) employees are allowed here since this
+    // endpoint always targets one explicitly-selected employee by id.
     const empResult = await db.execute({
-      sql: 'SELECT id, first_name, last_name, group_id, date_of_hire, rehire_date, employment_type, is_salaried_psl FROM employees WHERE id = ? AND is_active = 1',
+      sql: 'SELECT id, first_name, last_name, group_id, date_of_hire, rehire_date, employment_type, is_salaried_psl, is_active FROM employees WHERE id = ?',
       args: [empId],
     });
     const employee = empResult.rows[0] as unknown as {
@@ -72,9 +73,15 @@ export async function GET(request: NextRequest) {
       rehire_date: string | null;
       employment_type: 'full_time' | 'part_time' | null;
       is_salaried_psl: number | null;
+      is_active: number;
     } | undefined;
 
     if (!employee) {
+      return NextResponse.json({ error: 'Employee not found' }, { status: 404 });
+    }
+
+    // Only master-group users may pull up an inactive (former) employee
+    if (employee.is_active === 0 && authUser.group?.is_master !== 1) {
       return NextResponse.json({ error: 'Employee not found' }, { status: 404 });
     }
 

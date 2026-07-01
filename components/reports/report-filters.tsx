@@ -10,7 +10,6 @@ interface Employee {
   id: number;
   first_name: string;
   last_name: string;
-  role?: string;
   group_id?: number;
 }
 
@@ -27,13 +26,14 @@ interface TimeCode {
 
 interface ReportFiltersProps {
   employees: Employee[];
+  inactiveEmployees?: Employee[];
   timeCodes: TimeCode[];
   groups?: Group[];
   selectedGroupId?: string;
   onGroupChange?: (value: string) => void;
-  roles?: string[];
-  selectedRole?: string;
-  onRoleChange?: (value: string) => void;
+  isMasterUser?: boolean;
+  selectedInactive?: boolean;
+  onInactiveChange?: (value: boolean) => void;
   selectedEmployeeId: string;
   onEmployeeChange: (value: string) => void;
   selectedTimeCode: string;
@@ -51,13 +51,14 @@ interface ReportFiltersProps {
 
 export function ReportFilters({
   employees,
+  inactiveEmployees = [],
   timeCodes,
   groups = [],
   selectedGroupId = 'all',
   onGroupChange,
-  roles = [],
-  selectedRole = 'all',
-  onRoleChange,
+  isMasterUser,
+  selectedInactive = false,
+  onInactiveChange,
   selectedEmployeeId,
   onEmployeeChange,
   selectedTimeCode,
@@ -92,42 +93,41 @@ export function ReportFilters({
   const isVacActive = isSameDay(startDate, vacStart) && isSameDay(endDate, vacEnd);
   const isVacPrevActive = isSameDay(startDate, prevVacStart) && isSameDay(endDate, prevVacEnd);
 
-  const filteredEmployees = employees
-    .filter(e => selectedGroupId === 'all' || e.group_id?.toString() === selectedGroupId)
-    .filter(e => selectedRole === 'all' || e.role === selectedRole);
+  // Visible groups exclude "Employees" from the filter dropdown (still selectable via "All Groups")
+  const visibleGroups = groups.filter(g => g.name !== 'Employees');
+
+  const filteredEmployees = (selectedInactive ? inactiveEmployees : employees)
+    .filter(e => selectedGroupId === 'all' || e.group_id?.toString() === selectedGroupId);
 
   return (
     <HelpArea helpId="report-filters" bubblePosition="bottom">
       <div className="flex flex-wrap items-end gap-4 p-3 border rounded-lg bg-muted print:hidden">
-        {groups.length > 1 && onGroupChange && (
+        {(visibleGroups.length > 1 || isMasterUser) && onGroupChange && (
           <div className="flex flex-col flex-1 min-w-[160px] gap-1.5">
             <label className="text-sm font-medium">Group</label>
-            <Select value={selectedGroupId} onValueChange={onGroupChange}>
+            <Select
+              value={selectedInactive ? 'inactive' : selectedGroupId}
+              onValueChange={(value) => {
+                if (value === 'inactive') {
+                  onInactiveChange?.(true);
+                  onGroupChange('all');
+                } else {
+                  onInactiveChange?.(false);
+                  onGroupChange(value);
+                }
+              }}
+            >
               <SelectTrigger className="h-9 text-sm">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">All Groups</SelectItem>
-                {groups.map(g => (
+                {visibleGroups.map(g => (
                   <SelectItem key={g.id} value={g.id.toString()}>{g.name}</SelectItem>
                 ))}
-              </SelectContent>
-            </Select>
-          </div>
-        )}
-
-        {roles.length > 1 && onRoleChange && (
-          <div className="flex flex-col flex-1 min-w-[160px] gap-1.5">
-            <label className="text-sm font-medium">Role</label>
-            <Select value={selectedRole} onValueChange={onRoleChange}>
-              <SelectTrigger className="h-9 text-sm">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All Roles</SelectItem>
-                {roles.map(r => (
-                  <SelectItem key={r} value={r}>{r}</SelectItem>
-                ))}
+                {isMasterUser && (
+                  <SelectItem value="inactive">Inactive</SelectItem>
+                )}
               </SelectContent>
             </Select>
           </div>
