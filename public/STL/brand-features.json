@@ -69,7 +69,7 @@
       }
     },
     "officePresenceTracking": {
-      "enabled": true,
+      "enabled": false,
       "resetTime": "17:00"
     },
     "attendanceManagement": {
