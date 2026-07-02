@@ -99,25 +99,6 @@ export default function DashboardPage() {
     }
   }, [isAuthenticated, pathname]);
 
-  // Lazily fetch inactive employees when the "Inactive" filter is selected
-  useEffect(() => {
-    if (!selectedInactive || !isAuthenticated || !(isMaster || isAdministrator || isManager)) return;
-
-    (async () => {
-      try {
-        const res = await authFetch('/api/employees?includeInactive=true');
-        if (res.status === 401) return;
-        if (res.ok) {
-          const data = await res.json();
-          if (Array.isArray(data)) {
-            setInactiveEmployees(data.filter((e: Employee) => e.is_active === 0));
-          }
-        }
-      } catch (error) {
-        console.error('Failed to load inactive employees:', error);
-      }
-    })();
-  }, [selectedInactive, isAuthenticated, isMaster, isAdministrator, isManager]);
 
   const loadDashboardData = async () => {
     if (!isAuthenticated) {
@@ -127,12 +108,14 @@ export default function DashboardPage() {
 
     const cachedDashboard = getCachedData<{
       employees: Employee[];
+      inactiveEmployees: Employee[];
       upcomingStaffingData: UpcomingStaffingEntry[];
       entries: AttendanceEntry[];
       groups: Group[];
     }>('dashboard:data');
     if (cachedDashboard) {
       setEmployees(cachedDashboard.employees);
+      setInactiveEmployees(cachedDashboard.inactiveEmployees ?? []);
       setUpcomingStaffingData(cachedDashboard.upcomingStaffingData);
       setEntries(cachedDashboard.entries ?? []);
       if (cachedDashboard.groups) setGroups(cachedDashboard.groups);
@@ -147,8 +130,13 @@ export default function DashboardPage() {
       endDate.setDate(endDate.getDate() + 13);
       const endDateStr = formatDateStr(endDate);
 
+      // Fetch active + inactive employees in one call — the backend already scopes
+      // inactive visibility to master/admin/manager roles, so this is safe for everyone.
+      // We need inactive employees loaded regardless of the "Show Inactive" toggle so
+      // historical entries for deactivated employees still resolve to a real name
+      // instead of falling back to "Employee #N".
       const [employeesRes, upcomingStaffingRes, entriesRes, groupsRes] = await Promise.all([
-        authFetch('/api/employees'),
+        authFetch('/api/employees?includeInactive=true'),
         authFetch('/api/dashboard/upcoming-staffing?days=5'),
         authFetch(`/api/attendance?startDate=${todayStr}&endDate=${endDateStr}`),
         authFetch('/api/groups'),
@@ -163,11 +151,17 @@ export default function DashboardPage() {
       const entriesData = entriesRes.ok ? await entriesRes.json() : [];
       const groupsData = groupsRes.ok ? await groupsRes.json() : [];
 
+      let activeEmployees: Employee[] = [];
+      let inactiveEmployeesData: Employee[] = [];
       if (Array.isArray(employeesData)) {
-        setEmployees(employeesData);
+        activeEmployees = employeesData.filter((e: Employee) => e.is_active !== 0);
+        inactiveEmployeesData = employeesData.filter((e: Employee) => e.is_active === 0);
+        setEmployees(activeEmployees);
+        setInactiveEmployees(inactiveEmployeesData);
       } else {
         console.error('Invalid employees data:', employeesData);
         setEmployees([]);
+        setInactiveEmployees([]);
       }
 
       if (Array.isArray(upcomingData)) {
@@ -188,7 +182,8 @@ export default function DashboardPage() {
       }
 
       setCachedData('dashboard:data', {
-        employees: Array.isArray(employeesData) ? employeesData : [],
+        employees: activeEmployees,
+        inactiveEmployees: inactiveEmployeesData,
         upcomingStaffingData: Array.isArray(upcomingData) ? upcomingData : [],
         entries: Array.isArray(entriesData) ? entriesData : [],
         groups: Array.isArray(groupsData) ? groupsData.filter((g: Group) => !g.is_master) : [],
@@ -547,7 +542,9 @@ export default function DashboardPage() {
             ) : (
               <div className="space-y-2">
                 {periodEntries.map(entry => {
-                  const employee = filteredEmployees.find(e => e.id === entry.employee_id);
+                  const employee = filteredEmployees.find(e => e.id === entry.employee_id)
+                    || employees.find(e => e.id === entry.employee_id)
+                    || inactiveEmployees.find(e => e.id === entry.employee_id);
                   return (
                     <div key={entry.id} className="flex items-center justify-between text-sm border-b pb-2 last:border-0">
                       <div>
