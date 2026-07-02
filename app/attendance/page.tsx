@@ -15,7 +15,7 @@ import { useToast } from '@/hooks/use-toast';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Spinner } from '@/components/spinner';
 import { Label } from '@/components/ui/label';
-import { UserPlus, CalendarRange } from 'lucide-react';
+import { UserPlus, CalendarRange, Eye, EyeOff } from 'lucide-react';
 import { useTheme } from '@/lib/theme-context';
 import { getTheme } from '@/lib/themes';
 import { useAuth } from '@/lib/auth-context';
@@ -126,7 +126,7 @@ function AttendanceContent() {
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
-  const { user, isAuthenticated, isLoading: authLoading, authFetch } = useAuth();
+  const { user, isAuthenticated, isLoading: authLoading, authFetch, isMaster, isAdministrator, isManager } = useAuth();
   const [employees, setEmployees] = useState<Employee[]>([]);
   const [timeCodes, setTimeCodes] = useState<TimeCode[]>([]);
   const [entries, setEntries] = useState<AttendanceEntry[]>([]);
@@ -222,7 +222,7 @@ function AttendanceContent() {
 
   // Lazily fetch inactive employees when the "Inactive" filter is selected
   useEffect(() => {
-    if (!selectedInactive || !isAuthenticated || user?.group?.is_master !== 1) return;
+    if (!selectedInactive || !isAuthenticated || !(isMaster || isAdministrator || isManager)) return;
 
     (async () => {
       try {
@@ -238,7 +238,7 @@ function AttendanceContent() {
         console.error('Failed to load inactive employees:', error);
       }
     })();
-  }, [selectedInactive, isAuthenticated]);
+  }, [selectedInactive, isAuthenticated, isMaster, isAdministrator, isManager]);
 
   // Reload company holidays when year changes
   useEffect(() => {
@@ -635,7 +635,7 @@ function AttendanceContent() {
 
   // Visible groups exclude "Employees" from the filter dropdown (still selectable via "All Groups")
   const visibleGroups = groups.filter(g => g.name !== 'Employees');
-  const isMasterUser = user?.group?.is_master === 1;
+  const isMasterUser = isMaster || isAdministrator || isManager;
 
   // Filter employees by selected group for the "All" view
   const filteredEmployees = (selectedInactive ? inactiveEmployees : employees)
@@ -694,15 +694,10 @@ function AttendanceContent() {
                   <div className="flex flex-col gap-1.5">
                     <Label htmlFor="group-filter" className="text-sm font-medium">Group</Label>
                     <Select
-                      value={selectedInactive ? 'inactive' : (selectedGroupId?.toString() ?? 'all')}
+                      value={selectedGroupId?.toString() ?? 'all'}
                       onValueChange={(value) => {
-                        if (value === 'inactive') {
-                          setSelectedInactive(true);
-                          setSelectedGroupId(null);
-                        } else {
-                          setSelectedInactive(false);
-                          setSelectedGroupId(value === 'all' ? null : parseInt(value));
-                        }
+                        setSelectedInactive(false);
+                        setSelectedGroupId(value === 'all' ? null : parseInt(value));
                       }}
                     >
                       <SelectTrigger id="group-filter" className="h-9 w-44 text-sm">
@@ -713,11 +708,30 @@ function AttendanceContent() {
                         {visibleGroups.map(g => (
                           <SelectItem key={g.id} value={g.id.toString()}>{g.name}</SelectItem>
                         ))}
-                        {isMasterUser && (
-                          <SelectItem value="inactive">Inactive</SelectItem>
-                        )}
                       </SelectContent>
                     </Select>
+                  </div>
+                )}
+                {isMasterUser && (
+                  <div className="flex flex-col gap-1.5">
+                    <Label className="text-sm font-medium opacity-0 select-none">Inactive</Label>
+                    <Button
+                      variant="outline"
+                      onClick={() => setSelectedInactive(!selectedInactive)}
+                      className="h-9 gap-2"
+                    >
+                      {selectedInactive ? (
+                        <>
+                          <EyeOff className="h-4 w-4" />
+                          Hide Inactive
+                        </>
+                      ) : (
+                        <>
+                          <Eye className="h-4 w-4" />
+                          Show Inactive
+                        </>
+                      )}
+                    </Button>
                   </div>
                 )}
 

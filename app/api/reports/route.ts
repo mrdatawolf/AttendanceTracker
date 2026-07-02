@@ -21,8 +21,12 @@ export async function GET(request: NextRequest) {
     const timeCode = searchParams.get('timeCode') || 'all';
     const startDate = searchParams.get('startDate');
     const endDate = searchParams.get('endDate');
-    // Only master-group users may pull inactive (former) employees into a report
-    const showInactive = searchParams.get('inactive') === 'true' && authUser.group?.is_master === 1;
+    // Only master-group users, Administrators, or Managers may pull inactive (former) employees into a report
+    const canSeeInactive = authUser.group?.is_master === 1
+      || authUser.role?.can_access_all_groups === 1
+      || authUser.role_id === 1
+      || authUser.role_id === 2;
+    const showInactive = searchParams.get('inactive') === 'true' && canSeeInactive;
 
     if (!startDate || !endDate) {
       return NextResponse.json({ error: 'Start date and end date are required' }, { status: 400 });

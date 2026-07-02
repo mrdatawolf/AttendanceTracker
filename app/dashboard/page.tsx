@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
-import { Users, Calendar, Clock, TrendingUp, CalendarDays, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Users, Calendar, Clock, TrendingUp, CalendarDays, ChevronLeft, ChevronRight, Eye, EyeOff } from 'lucide-react';
 import { config } from '@/lib/config';
 import { useAuth } from '@/lib/auth-context';
 import { useRouter, usePathname } from 'next/navigation';
@@ -68,7 +68,7 @@ interface UpcomingStaffingEntry {
 export default function DashboardPage() {
   const router = useRouter();
   const pathname = usePathname();
-  const { isAuthenticated, isLoading: authLoading, authFetch, user } = useAuth();
+  const { isAuthenticated, isLoading: authLoading, authFetch, user, isMaster, isAdministrator, isManager } = useAuth();
   const { setCurrentScreen } = useHelp();
   const [employees, setEmployees] = useState<Employee[]>([]);
   const [entries, setEntries] = useState<AttendanceEntry[]>([]);
@@ -101,7 +101,7 @@ export default function DashboardPage() {
 
   // Lazily fetch inactive employees when the "Inactive" filter is selected
   useEffect(() => {
-    if (!selectedInactive || !isAuthenticated || user?.group?.is_master !== 1) return;
+    if (!selectedInactive || !isAuthenticated || !(isMaster || isAdministrator || isManager)) return;
 
     (async () => {
       try {
@@ -117,7 +117,7 @@ export default function DashboardPage() {
         console.error('Failed to load inactive employees:', error);
       }
     })();
-  }, [selectedInactive, isAuthenticated]);
+  }, [selectedInactive, isAuthenticated, isMaster, isAdministrator, isManager]);
 
   const loadDashboardData = async () => {
     if (!isAuthenticated) {
@@ -202,7 +202,7 @@ export default function DashboardPage() {
 
   // Visible groups exclude "Employees" from the filter dropdown (still selectable via "All Groups")
   const visibleGroups = groups.filter(g => g.name !== 'Employees');
-  const isMasterUser = user?.group?.is_master === 1;
+  const isMasterUser = isMaster || isAdministrator || isManager;
 
   const filteredEmployees = (selectedInactive ? inactiveEmployees : employees)
     .filter(e => !selectedGroupId || e.group_id === selectedGroupId);
@@ -329,15 +329,10 @@ export default function DashboardPage() {
               <div className="flex items-center gap-1.5">
                 <Label htmlFor="dashboard-group-filter" className="text-sm font-medium">Group</Label>
                 <Select
-                  value={selectedInactive ? 'inactive' : (selectedGroupId?.toString() ?? 'all')}
+                  value={selectedGroupId?.toString() ?? 'all'}
                   onValueChange={(value) => {
-                    if (value === 'inactive') {
-                      setSelectedInactive(true);
-                      setSelectedGroupId(null);
-                    } else {
-                      setSelectedInactive(false);
-                      setSelectedGroupId(value === 'all' ? null : parseInt(value));
-                    }
+                    setSelectedInactive(false);
+                    setSelectedGroupId(value === 'all' ? null : parseInt(value));
                   }}
                 >
                   <SelectTrigger id="dashboard-group-filter" className="h-9 w-44 text-sm">
@@ -348,12 +343,29 @@ export default function DashboardPage() {
                     {visibleGroups.map(g => (
                       <SelectItem key={g.id} value={g.id.toString()}>{g.name}</SelectItem>
                     ))}
-                    {isMasterUser && (
-                      <SelectItem value="inactive">Inactive</SelectItem>
-                    )}
                   </SelectContent>
                 </Select>
               </div>
+            )}
+            {isMasterUser && (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setSelectedInactive(!selectedInactive)}
+                className="gap-2"
+              >
+                {selectedInactive ? (
+                  <>
+                    <EyeOff className="h-4 w-4" />
+                    Hide Inactive
+                  </>
+                ) : (
+                  <>
+                    <Eye className="h-4 w-4" />
+                    Show Inactive
+                  </>
+                )}
+              </Button>
             )}
             <Link href="/attendance" className="text-sm text-blue-600 hover:underline whitespace-nowrap">
               Go to Attendance →

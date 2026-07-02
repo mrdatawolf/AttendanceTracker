@@ -105,7 +105,8 @@ const DEFAULT_COLUMNS: ReportColumn[] = [
 export default function ReportsPage() {
   const router = useRouter();
   const pathname = usePathname();
-  const { isAuthenticated, isLoading: authLoading, authFetch, isMaster } = useAuth();
+  const { isAuthenticated, isLoading: authLoading, authFetch, isMaster, isAdministrator, isManager } = useAuth();
+  const canSeeInactive = isMaster || isAdministrator || isManager;
   const { setCurrentScreen } = useHelp();
 
   // Report definitions
@@ -153,7 +154,7 @@ export default function ReportsPage() {
 
   // Lazily fetch inactive employees when the "Inactive" group filter is selected
   useEffect(() => {
-    if (!selectedInactive || !isAuthenticated || !isMaster) return;
+    if (!selectedInactive || !isAuthenticated || !canSeeInactive) return;
 
     (async () => {
       try {
@@ -169,7 +170,7 @@ export default function ReportsPage() {
         console.error('Failed to load inactive employees:', error);
       }
     })();
-  }, [selectedInactive, isAuthenticated, isMaster]);
+  }, [selectedInactive, isAuthenticated, canSeeInactive]);
 
   // Auto-generate report when selection changes or on initial load
   useEffect(() => {
@@ -499,7 +500,7 @@ export default function ReportsPage() {
               groups={groups}
               selectedGroupId={selectedGroupId}
               onGroupChange={setSelectedGroupId}
-              isMasterUser={isMaster}
+              isMasterUser={canSeeInactive}
               selectedInactive={selectedInactive}
               onInactiveChange={setSelectedInactive}
               selectedEmployeeId={selectedEmployeeId}
@@ -542,7 +543,7 @@ export default function ReportsPage() {
               groups={groups}
               selectedGroupId={selectedGroupId}
               onGroupChange={setSelectedGroupId}
-              isMasterUser={isMaster}
+              isMasterUser={canSeeInactive}
               selectedInactive={selectedInactive}
               onInactiveChange={setSelectedInactive}
               selectedEmployeeId={selectedEmployeeId}

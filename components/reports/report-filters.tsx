@@ -5,6 +5,7 @@ import { DatePicker } from '@/components/ui/date-picker';
 import { Button } from '@/components/ui/button';
 import { Spinner } from '@/components/spinner';
 import { HelpArea } from '@/components/help-area';
+import { Eye, EyeOff } from 'lucide-react';
 
 interface Employee {
   id: number;
@@ -106,15 +107,10 @@ export function ReportFilters({
           <div className="flex flex-col flex-1 min-w-[160px] gap-1.5">
             <label className="text-sm font-medium">Group</label>
             <Select
-              value={selectedInactive ? 'inactive' : selectedGroupId}
+              value={selectedGroupId}
               onValueChange={(value) => {
-                if (value === 'inactive') {
-                  onInactiveChange?.(true);
-                  onGroupChange('all');
-                } else {
-                  onInactiveChange?.(false);
-                  onGroupChange(value);
-                }
+                onInactiveChange?.(false);
+                onGroupChange(value);
               }}
             >
               <SelectTrigger className="h-9 text-sm">
@@ -125,11 +121,32 @@ export function ReportFilters({
                 {visibleGroups.map(g => (
                   <SelectItem key={g.id} value={g.id.toString()}>{g.name}</SelectItem>
                 ))}
-                {isMasterUser && (
-                  <SelectItem value="inactive">Inactive</SelectItem>
-                )}
               </SelectContent>
             </Select>
+          </div>
+        )}
+
+        {isMasterUser && (
+          <div className="flex flex-col gap-1.5">
+            <label className="text-sm font-medium opacity-0 select-none">Inactive</label>
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => onInactiveChange?.(!selectedInactive)}
+              className="h-9 gap-2"
+            >
+              {selectedInactive ? (
+                <>
+                  <EyeOff className="h-4 w-4" />
+                  Hide Inactive
+                </>
+              ) : (
+                <>
+                  <Eye className="h-4 w-4" />
+                  Show Inactive
+                </>
+              )}
+            </Button>
           </div>
         )}
 

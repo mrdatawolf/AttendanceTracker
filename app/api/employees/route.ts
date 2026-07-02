@@ -64,9 +64,10 @@ export async function GET(request: NextRequest) {
       const allEmployees = await getAllEmployees();
 
       // Filter out inactive employees unless includeInactive is true
-      // Only superusers can see inactive employees
+      // Only superusers, master-group users, Administrators, or Managers can see inactive employees
+      const canSeeInactive = userIsSuperuser || hasFullAccess || authUser.role_id === 1 || authUser.role_id === 2;
       let activeEmployees = allEmployees;
-      if (!includeInactive || !userIsSuperuser) {
+      if (!includeInactive || !canSeeInactive) {
         activeEmployees = allEmployees.filter(emp => emp.is_active === 1);
       }
 

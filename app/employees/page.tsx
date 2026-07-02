@@ -89,6 +89,7 @@ export default function UsersPage() {
   const leaveManagementEnabled = brandFeatures?.features?.leaveManagement?.enabled ?? false;
   const officePresenceEnabled = brandFeatures?.features?.officePresenceTracking?.enabled ?? false;
   const isAdmin = user?.group?.is_master === 1 || user?.role_id === 1;
+  const canSeeInactive = isAdmin || user?.role_id === 2;
 
   // Set the current screen for help context
   const { setCurrentScreen } = useHelp();
@@ -460,7 +461,7 @@ export default function UsersPage() {
           </div>
         </HelpArea>
         <div className="flex gap-2">
-          {user?.group?.is_master === 1 && (
+          {canSeeInactive && (
             <Button
               variant="outline"
               onClick={() => setShowInactive(!showInactive)}
