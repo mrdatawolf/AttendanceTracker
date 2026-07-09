@@ -798,3 +798,111 @@ export async function deleteJobTitle(id: number): Promise<void> {
     args: [id],
   });
 }
+
+// ============================================================================
+// API KEY MANAGEMENT
+// ============================================================================
+
+export interface ApiKey {
+  id: number;
+  name: string;
+  key_prefix: string;
+  key_hash: string;
+  user_id: number;
+  is_active: number;
+  expires_at?: string;
+  last_used_at?: string;
+  created_by?: number;
+  created_at: string;
+}
+
+export interface ApiKeyWithUser extends Omit<ApiKey, 'key_hash'> {
+  username?: string;
+  user_full_name?: string;
+}
+
+/**
+ * Get all API keys with their owning user (never exposes key_hash)
+ */
+export async function getAllApiKeys(): Promise<ApiKeyWithUser[]> {
+  const result = await db.execute(`
+    SELECT k.id, k.name, k.key_prefix, k.user_id, k.is_active, k.expires_at,
+           k.last_used_at, k.created_by, k.created_at,
+           u.username, u.full_name as user_full_name
+    FROM api_keys k
+    LEFT JOIN users u ON k.user_id = u.id
+    ORDER BY k.created_at DESC
+  `);
+  return result.rows as unknown as ApiKeyWithUser[];
+}
+
+/**
+ * Look up an active, unexpired API key by its hash
+ */
+export async function getActiveApiKeyByHash(keyHash: string): Promise<ApiKey | null> {
+  const result = await db.execute({
+    sql: `SELECT * FROM api_keys
+          WHERE key_hash = ? AND is_active = 1
+            AND (expires_at IS NULL OR expires_at > CURRENT_TIMESTAMP)`,
+    args: [keyHash],
+  });
+  return (result.rows[0] as unknown as ApiKey) || null;
+}
+
+/**
+ * Create an API key record (caller generates and hashes the key)
+ */
+export async function createApiKey(key: Omit<ApiKey, 'id' | 'is_active' | 'last_used_at' | 'created_at'>): Promise<ApiKeyWithUser> {
+  const result = await db.execute({
+    sql: `INSERT INTO api_keys (name, key_prefix, key_hash, user_id, expires_at, created_by)
+          VALUES (?, ?, ?, ?, ?, ?)`,
+    args: [
+      key.name,
+      key.key_prefix,
+      key.key_hash,
+      key.user_id,
+      key.expires_at || null,
+      key.created_by || null,
+    ],
+  });
+
+  const id = Number(result.lastInsertRowid);
+  const { key_hash, ...rest } = key;
+  return { id, is_active: 1, created_at: new Date().toISOString(), ...rest };
+}
+
+/**
+ * Revoke (deactivate) an API key
+ */
+export async function revokeApiKey(id: number): Promise<void> {
+  await db.execute({
+    sql: 'UPDATE api_keys SET is_active = 0 WHERE id = ?',
+    args: [id],
+  });
+}
+
+/**
+ * Get an API key by ID (without hash)
+ */
+export async function getApiKeyById(id: number): Promise<ApiKeyWithUser | null> {
+  const result = await db.execute({
+    sql: `SELECT k.id, k.name, k.key_prefix, k.user_id, k.is_active, k.expires_at,
+                 k.last_used_at, k.created_by, k.created_at,
+                 u.username, u.full_name as user_full_name
+          FROM api_keys k
+          LEFT JOIN users u ON k.user_id = u.id
+          WHERE k.id = ?`,
+    args: [id],
+  });
+  return (result.rows[0] as unknown as ApiKeyWithUser) || null;
+}
+
+/**
+ * Record that an API key was used
+ */
+export async function touchApiKeyUsage(id: number): Promise<void> {
+  await db.execute({
+    sql: 'UPDATE api_keys SET last_used_at = CURRENT_TIMESTAMP WHERE id = ?',
+    args: [id],
+  });
+}
