@@ -16,6 +16,7 @@ import { ColorConfigManagement } from '@/components/color-config-management';
 import { OfficeCapacitySettings } from '@/components/office-capacity-settings';
 import { SeedDemoDataCard } from '@/components/seed-demo-data-card';
 import { EmployeeLinkSettings } from '@/components/employee-link-settings';
+import { ApiKeyManagement } from '@/components/api-key-management';
 import { ImportAttendanceDialog } from '@/components/import-attendance';
 import { useHelp } from '@/lib/help-context';
 import { HelpArea } from '@/components/help-area';
@@ -176,6 +177,9 @@ export default function SettingsPage() {
             </CardContent>
           </Card>
         )}
+
+        {/* API Keys - Super Admin Only */}
+        {isSuperAdmin && <ApiKeyManagement />}
 
         {/* Database Backups - Admin Only */}
         {isAdmin && <BackupCard />}

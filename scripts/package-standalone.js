@@ -92,8 +92,9 @@ const envContent = `# Server Configuration
 PORT=6029
 HOSTNAME=0.0.0.0
 
-# JWT Secret - CHANGE THIS IN PRODUCTION!
-JWT_SECRET=your-secret-key-change-in-production
+# JWT Secret - auto-generated per install and stored next to the databases.
+# Uncomment only to override with your own value:
+# JWT_SECRET=
 
 # Node Environment
 NODE_ENV=production
