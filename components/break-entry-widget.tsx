@@ -55,6 +55,8 @@ interface BreakEntryWidgetProps {
   employeeId: number;
 }
 
+const POLL_INTERVAL_MS = 5 * 60 * 1000; // Refresh every 5 minutes
+
 type BreakType = 'break_1' | 'lunch' | 'break_2';
 
 const BREAK_ICONS: Record<BreakType, typeof Coffee> = {
@@ -98,10 +100,10 @@ export function BreakEntryWidget({ employeeId }: BreakEntryWidgetProps) {
   const [error, setError] = useState<string | null>(null);
   const [compliancePrompt, setCompliancePrompt] = useState<{ breakType: BreakType; reason: string } | null>(null);
 
-  const loadBreakEntries = useCallback(async () => {
+  const loadBreakEntries = useCallback(async (silent = false) => {
     if (!employeeId) return;
 
-    setLoading(true);
+    if (!silent) setLoading(true);
     setError(null);
     try {
       const response = await authFetch(`/api/break-entries?employeeId=${employeeId}`);
@@ -120,12 +122,14 @@ export function BreakEntryWidget({ employeeId }: BreakEntryWidgetProps) {
       console.error('Failed to load break entries:', err);
       setError('Failed to load breaks');
     } finally {
-      setLoading(false);
+      if (!silent) setLoading(false);
     }
   }, [authFetch, employeeId]);
 
   useEffect(() => {
     loadBreakEntries();
+    const interval = setInterval(() => loadBreakEntries(true), POLL_INTERVAL_MS);
+    return () => clearInterval(interval);
   }, [loadBreakEntries]);
 
   const handleLogBreak = async (breakType: BreakType) => {
@@ -216,7 +220,7 @@ export function BreakEntryWidget({ employeeId }: BreakEntryWidgetProps) {
               variant="ghost"
               size="sm"
               className="mt-2"
-              onClick={loadBreakEntries}
+              onClick={() => loadBreakEntries()}
             >
               <RefreshCw className="h-4 w-4 mr-1" />
               Retry
@@ -245,7 +249,7 @@ export function BreakEntryWidget({ employeeId }: BreakEntryWidgetProps) {
             variant="ghost"
             size="icon"
             className="h-6 w-6"
-            onClick={loadBreakEntries}
+            onClick={() => loadBreakEntries()}
             title="Refresh"
           >
             <RefreshCw className="h-3 w-3" />
