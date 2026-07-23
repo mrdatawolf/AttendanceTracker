@@ -68,6 +68,22 @@
       "is_active": 1
     },
     {
+      "id": 4,
+      "code": "FMLA",
+      "description": "FMLA/CFRA",
+      "hours_limit": null,
+      "default_allocation": null,
+      "is_active": 1
+    },
+    {
+      "id": 14,
+      "code": "WC",
+      "description": "Worker's Comp",
+      "hours_limit": null,
+      "default_allocation": null,
+      "is_active": 1
+    },
+    {
       "id": 15,
       "code": "BRP",
       "description": "Bereavement Paid",
@@ -100,17 +116,9 @@
       "is_active": 1
     },
     {
-      "id": 4,
-      "code": "FMLA",
-      "description": "FMLA/CFRA",
-      "hours_limit": null,
-      "default_allocation": null,
-      "is_active": 1
-    },
-    {
-      "id": 14,
-      "code": "WC",
-      "description": "Worker's Comp",
+      "id": 19,
+      "code": "ML",
+      "description": "Military Leave",
       "hours_limit": null,
       "default_allocation": null,
       "is_active": 1
