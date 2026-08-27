@@ -537,6 +537,20 @@ export const openApiSpec = {
         },
       },
     },
+    '/api/reports/vacation-transparency': {
+      get: {
+        tags: ['Reports'],
+        summary: 'Per-employee vacation calculation detail',
+        description: 'Every employee\'s vacation (VAC) balance plus the exact basis used to compute it (manual override, individually negotiated rule, brand default tier, or flat allocation) and a plain-English explanation of the formula.',
+        parameters: [
+          { name: 'year', in: 'query', schema: { type: 'integer' }, description: 'Defaults to current year' },
+        ],
+        responses: {
+          '200': jsonResponse('Vacation calculation detail per employee', { type: 'object', additionalProperties: true }),
+          '401': std401,
+        },
+      },
+    },
     '/api/report-definitions': {
       get: {
         tags: ['Reference Data'],

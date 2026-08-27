@@ -137,7 +137,7 @@ export async function GET(request: NextRequest) {
     for (const row of allocResult.rows as unknown as Array<{ time_code: string; allocated_hours: number }>) {
       allocOverrides.set(row.time_code, row.allocated_hours);
     }
-    const employeeAccrualRules = new Map(employeeAccrualRuleRows.map(r => [r.time_code, r.rule]));
+    const employeeAccrualRules = new Map(employeeAccrualRuleRows.map(r => [r.time_code, r.rule as AccrualRule]));
 
     // Resolve allocations: overrides > employee-specific accrual rule > brand accrual rules > default_allocation
     const accrualCalc = brandFeatures?.features?.accrualCalculations as any;

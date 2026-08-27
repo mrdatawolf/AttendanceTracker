@@ -1031,6 +1031,58 @@ export function calculateAccrual(
   }
 }
 
+const MONTH_NAMES = [
+  'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'
+];
+
+function formatTierRange(minYears: number, maxYears: number | null): string {
+  return maxYears === null ? `${minYears}+ yr` : `${minYears}–${maxYears} yr`;
+}
+
+/**
+ * Turn a rule + its computed result into a plain-English explanation
+ * suitable for showing directly to a manager who's asking "why is this
+ * number what it is" — the full method (tier ladder, rate, cap, etc.),
+ * not just the final figure. Reuses `result.message` for the "here's where
+ * this employee currently sits" part rather than re-deriving it.
+ */
+export function explainAccrualResult(rule: AccrualRule, result: AccrualResult): string {
+  switch (rule.type) {
+    case 'tenureTiers': {
+      const tierList = (rule.tenureTiers || [])
+        .map(t => `${formatTierRange(t.minYears, t.maxYears)} = ${t.hours}h`)
+        .join(', ');
+      return `Tiered by years of service, measured on a rolling basis from the hire-date anniversary (a tier can take effect mid-year). Tiers: ${tierList}. ${result.message}`;
+    }
+    case 'tieredSeniority': {
+      const periodConfig = typeof rule.period === 'object' ? rule.period : null;
+      const startMonth = periodConfig?.startMonth || 6;
+      const startDay = periodConfig?.startDay || 1;
+      const endMonth = periodConfig?.endMonth || 5;
+      const endDay = periodConfig?.endDay || 31;
+      const benefitYear = `${MONTH_NAMES[startMonth - 1]} ${startDay} – ${MONTH_NAMES[endMonth - 1]} ${endDay}`;
+      const tierList = (rule.tiers || [])
+        .map(t => `${formatTierRange(t.minBaseYears, t.maxBaseYears)} = ${t.fullTime.hours}h`)
+        .join(', ');
+      return `Standard tier based on base years of service as of the start of the benefit year (${benefitYear} — tiers lock in there, not on the hire anniversary). Tiers: ${tierList}. ${result.message}`;
+    }
+    case 'hoursWorked': {
+      const rate = rule.accrualRate || { earnHours: 1, perHoursWorked: 30 };
+      return `Accrues ${rate.earnHours}h for every ${rate.perHoursWorked}h worked, capped at ${rule.maxAccrual ?? '?'}h. ${result.message}`;
+    }
+    case 'annualGrant': {
+      const grantMonth = rule.grantDate?.month || 6;
+      const grantDay = rule.grantDate?.day || 1;
+      return `Granted in full (${rule.maxAnnual ?? '?'}h) each ${MONTH_NAMES[grantMonth - 1]} ${grantDay}, prorated in the first eligible year based on when eligibility started. ${result.message}`;
+    }
+    case 'quarterly': {
+      return `Accrues ${rule.hoursPerPeriod ?? '?'}h per quarter, up to ${rule.maxAnnual ?? '?'}h per year. ${result.message}`;
+    }
+    default:
+      return result.message;
+  }
+}
+
 /**
  * Load brand features and check for accrual rules
  * Returns a record of time code -> accrual rule mappings

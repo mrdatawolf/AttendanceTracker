@@ -56,29 +56,37 @@ export async function getEmployeeAccrualRules(employeeId: number): Promise<Emplo
   return result.rows.map(parseRow);
 }
 
+export interface EmployeeAccrualRuleWithNotes {
+  rule: AccrualRule;
+  notes: string | null;
+}
+
 /**
  * Bulk lookup for report endpoints that resolve balances for many
- * employees at once. Returns Map<employeeId, Map<timeCode, AccrualRule>>.
+ * employees at once. Returns Map<employeeId, Map<timeCode, { rule, notes }>>.
+ * `notes` is included because it can carry a caveat that matters to whoever
+ * reads the computed number (e.g. an assumption behind an inferred tier
+ * boundary) — callers that just need the rule can destructure `.rule`.
  */
 export async function getEmployeeAccrualRulesForEmployees(
   employeeIds: number[]
-): Promise<Map<number, Map<string, AccrualRule>>> {
-  const map = new Map<number, Map<string, AccrualRule>>();
+): Promise<Map<number, Map<string, EmployeeAccrualRuleWithNotes>>> {
+  const map = new Map<number, Map<string, EmployeeAccrualRuleWithNotes>>();
   if (employeeIds.length === 0) return map;
 
   const placeholders = employeeIds.map(() => '?').join(', ');
   const result = await db.execute({
-    sql: `SELECT employee_id, time_code, rule_json
+    sql: `SELECT employee_id, time_code, rule_json, notes
           FROM employee_accrual_rules
           WHERE employee_id IN (${placeholders})`,
     args: employeeIds,
   });
 
-  for (const row of result.rows as unknown as Array<{ employee_id: number; time_code: string; rule_json: string }>) {
+  for (const row of result.rows as unknown as Array<{ employee_id: number; time_code: string; rule_json: string; notes: string | null }>) {
     if (!map.has(row.employee_id)) {
       map.set(row.employee_id, new Map());
     }
-    map.get(row.employee_id)!.set(row.time_code, JSON.parse(row.rule_json));
+    map.get(row.employee_id)!.set(row.time_code, { rule: JSON.parse(row.rule_json), notes: row.notes ?? null });
   }
 
   return map;

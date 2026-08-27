@@ -1,5 +1,8 @@
 import { describe, it, expect } from 'vitest';
-import { calculateTenureTiersAccrual, type AccrualRule } from '../accrual-calculations';
+import { calculateTenureTiersAccrual, calculateTieredSeniorityAccrual, explainAccrualResult, type AccrualRule } from '../accrual-calculations';
+import nflFeatures from '../../public/NFL/brand-features.json';
+
+const HOURLY_VAC_RULE = nflFeatures.features.accrualCalculations.rules.VAC as unknown as AccrualRule;
 
 // ─────────────────────────────────────────────────────────────────────────────
 // NFL salaried vacation — individually negotiated-at-hire schedules
@@ -131,5 +134,25 @@ describe('NFL salaried vacation — tenureTiers accrual', () => {
     const result = calculateTenureTiersAccrual(d(2018, 10, 19), asOf, GROUP_A);
     expect(result.tenureTiersDetails?.years).toBe(7);
     expect(result.tenureTiersDetails?.currentTier).toEqual({ minYears: 5, maxYears: 8, hours: 120 });
+  });
+});
+
+describe('explainAccrualResult', () => {
+  it('tenureTiers: lists the full tier ladder and where this employee currently sits', () => {
+    const result = calculateTenureTiersAccrual(d(2018, 10, 19), d(2026, 8, 26), GROUP_A);
+    const explanation = explainAccrualResult(GROUP_A, result);
+    expect(explanation).toContain('rolling basis from the hire-date anniversary');
+    expect(explanation).toContain('0–4 yr = 80h');
+    expect(explanation).toContain('16+ yr = 200h');
+    expect(explanation).toContain(result.message);
+  });
+
+  it('tieredSeniority: lists the benefit-year tiers and notes they lock in at benefit-year start', () => {
+    const hire = d(2022, 6, 1); // 3 base years at Jun 1 2025
+    const accrualResult = calculateTieredSeniorityAccrual(hire, 2025, d(2025, 10, 1), HOURLY_VAC_RULE, 1300);
+    const explanation = explainAccrualResult(HOURLY_VAC_RULE, accrualResult);
+    expect(explanation).toContain('Jun 1 – May 31');
+    expect(explanation).toContain('3–7 yr = 80h');
+    expect(explanation).toContain(accrualResult.message);
   });
 });

@@ -234,7 +234,7 @@ export async function GET(request: NextRequest) {
     ): BalanceWindow => {
       const empAllocations = allocationsMap.get(emp.id) || new Map();
       const defaultAlloc = timeCodeDefaults.get(lt.timeCode);
-      const employeeRule = employeeAccrualRulesMap.get(emp.id)?.get(lt.timeCode);
+      const employeeRule = employeeAccrualRulesMap.get(emp.id)?.get(lt.timeCode)?.rule;
       const accrualRule = employeeRule || accrualRules[lt.timeCode];
 
       if (accrualRule && emp.date_of_hire) {

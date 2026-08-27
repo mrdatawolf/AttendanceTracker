@@ -14,6 +14,8 @@ import { LeaveBalanceSummary } from '@/components/reports/leave-balance-summary'
 import { LeaveBalanceExport } from '@/components/reports/leave-balance-export';
 import { AttendanceManagementReport, type AttendanceManagementData } from '@/components/reports/attendance-management-report';
 import { AttendanceManagementExport } from '@/components/reports/attendance-management-export';
+import { VacationTransparencyReport, type VacationTransparencyData } from '@/components/reports/vacation-transparency-report';
+import { VacationTransparencyExport } from '@/components/reports/vacation-transparency-export';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
@@ -132,6 +134,9 @@ export default function ReportsPage() {
   // Attendance Management Report state
   const [attendanceManagementData, setAttendanceManagementData] = useState<AttendanceManagementData | null>(null);
 
+  // Vacation Transparency Report state
+  const [vacationTransparencyData, setVacationTransparencyData] = useState<VacationTransparencyData | null>(null);
+
   // Loading states
   const [initialLoading, setInitialLoading] = useState(true);
   const [reportLoading, setReportLoading] = useState(false);
@@ -178,6 +183,8 @@ export default function ReportsPage() {
 
     if (selectedReportId === 'leave-balance-summary') {
       loadLeaveBalanceSummary();
+    } else if (selectedReportId === 'vacation-transparency') {
+      loadVacationTransparency();
     } else if (selectedReportId === 'attendance-management') {
       const now = new Date();
       const prevMonthStart = new Date(now.getFullYear(), now.getMonth() - 1, 1);
@@ -294,6 +301,30 @@ export default function ReportsPage() {
     }
   };
 
+  const loadVacationTransparency = async () => {
+    setReportLoading(true);
+    try {
+      const res = await authFetch('/api/reports/vacation-transparency');
+
+      if (res.status === 401) {
+        return;
+      }
+
+      if (res.ok) {
+        const data = await res.json();
+        setVacationTransparencyData(data);
+      } else {
+        console.error('Failed to load vacation transparency report');
+        setVacationTransparencyData(null);
+      }
+    } catch (error) {
+      console.error('Failed to load vacation transparency report:', error);
+      setVacationTransparencyData(null);
+    } finally {
+      setReportLoading(false);
+    }
+  };
+
   const loadAttendanceManagement = async () => {
     if (!selectedEmployeeId || selectedEmployeeId === 'all') {
       setAttendanceManagementData(null);
@@ -373,6 +404,7 @@ export default function ReportsPage() {
 
   const selectedReport = reportDefinitions.find(r => r.id === selectedReportId);
   const isLeaveBalanceSummary = selectedReportId === 'leave-balance-summary';
+  const isVacationTransparency = selectedReportId === 'vacation-transparency';
   const isAttendanceManagement = selectedReportId === 'attendance-management';
   const isBreakCompliance = selectedReportId === 'break-compliance';
 
@@ -489,6 +521,34 @@ export default function ReportsPage() {
                 loading={reportLoading}
               />
             </div>
+          </div>
+        ) : isVacationTransparency ? (
+          /* Vacation Transparency Report */
+          <div className="space-y-4">
+            <div className="flex items-center justify-between p-2 border rounded-lg bg-muted">
+              <h2 className="text-lg font-semibold">
+                {vacationTransparencyData?.year || new Date().getFullYear()} Vacation Calculations
+              </h2>
+              <div className="flex items-center gap-2 print:hidden">
+                <Button
+                  variant="outline"
+                  onClick={loadVacationTransparency}
+                  disabled={reportLoading}
+                >
+                  {reportLoading ? 'Loading...' : 'Refresh'}
+                </Button>
+                <PrintReportButton disabled={reportLoading || !vacationTransparencyData || vacationTransparencyData.employees.length === 0} />
+                <VacationTransparencyExport
+                  data={vacationTransparencyData}
+                  filename={exportFilename}
+                />
+              </div>
+            </div>
+
+            <VacationTransparencyReport
+              data={vacationTransparencyData}
+              loading={reportLoading}
+            />
           </div>
         ) : isAttendanceManagement ? (
           /* Attendance Management Report (per-employee) */
