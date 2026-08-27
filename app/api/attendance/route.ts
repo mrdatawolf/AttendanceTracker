@@ -14,6 +14,7 @@ import { serializeBigInt } from '@/lib/utils';
 import { getBrandTimeCodes, getAccrualRuleForTimeCode } from '@/lib/brand-time-codes';
 import { getBrandFeatures, getBulkEntryConfig } from '@/lib/brand-features';
 import { calculateAccrual, AccrualRule } from '@/lib/accrual-calculations';
+import { getEmployeeAccrualRule } from '@/lib/employee-accrual-rules';
 
 export async function GET(request: NextRequest) {
   try {
@@ -220,8 +221,11 @@ export async function POST(request: NextRequest) {
       let effectiveLimit: number | null = tcDef?.hours_limit ?? null;
 
       if (effectiveLimit === null && tcDef) {
-        // No hard hours_limit — check accrual rules and allocations
-        const accrualRule = getAccrualRuleForTimeCode(time_code);
+        // No hard hours_limit — check accrual rules and allocations.
+        // An employee-specific negotiated rule takes precedence over the
+        // brand-wide default for this time code.
+        const employeeRule = await getEmployeeAccrualRule(body.employee_id, time_code);
+        const accrualRule = employeeRule?.rule || getAccrualRuleForTimeCode(time_code);
         const entryYear = new Date(start_date + 'T00:00:00').getFullYear();
 
         if (accrualRule) {

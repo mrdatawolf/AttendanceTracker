@@ -3,6 +3,7 @@ import { getAuthUser } from '@/lib/middleware/auth';
 import { db } from '@/lib/db-sqlite';
 import { getBrandTimeCodes, getBrandTimeCodeByCode, getAccrualRuleForTimeCode } from '@/lib/brand-time-codes';
 import { calculateAccrual, AccrualResult, AccrualRule } from '@/lib/accrual-calculations';
+import { getEmployeeAccrualRules } from '@/lib/employee-accrual-rules';
 
 export async function GET(request: NextRequest) {
   try {
@@ -57,6 +58,11 @@ export async function GET(request: NextRequest) {
       args: [parseInt(employeeId), targetYear]
     });
 
+    // Individually negotiated accrual rules (e.g. a salaried employee's
+    // vacation schedule) that take precedence over the brand-wide rule.
+    const employeeAccrualRuleRows = await getEmployeeAccrualRules(parseInt(employeeId));
+    const employeeAccrualRules = new Map(employeeAccrualRuleRows.map(r => [r.time_code, r.rule]));
+
     let allocations;
 
     if (brandTimeCodes) {
@@ -64,8 +70,10 @@ export async function GET(request: NextRequest) {
       allocations = brandTimeCodes.filter(tc => !tc.spacer).map((tc) => {
         const override = allocationsResult.rows.find((a: any) => a.time_code_id === tc.id);
 
-        // Check for accrual rules for this time code
-        const accrualRule = getAccrualRuleForTimeCode(tc.code);
+        // Check for accrual rules for this time code — an employee-specific
+        // negotiated rule takes precedence over the brand-wide default.
+        const employeeRule = employeeAccrualRules.get(tc.code);
+        const accrualRule = employeeRule || getAccrualRuleForTimeCode(tc.code);
         let accrualDetails: AccrualResult | null = null;
         let allocatedHours = override ? (override as any).allocated_hours : tc.default_allocation;
 
@@ -95,6 +103,7 @@ export async function GET(request: NextRequest) {
           allocated_hours: allocatedHours,
           is_override: !!override,
           is_accrual: !override && !!accrualRule,
+          is_employee_specific_rule: !override && !!employeeRule,
           accrual_details: accrualDetails,
           is_salaried_psl: isSalariedPsl,
           notes: override ? (override as any).notes : null
@@ -109,8 +118,10 @@ export async function GET(request: NextRequest) {
       allocations = timeCodesResult.rows.map((tc: any) => {
         const override = allocationsResult.rows.find((a: any) => a.time_code_id === tc.id);
 
-        // Check for accrual rules for this time code
-        const accrualRule = getAccrualRuleForTimeCode(tc.code);
+        // Check for accrual rules for this time code — an employee-specific
+        // negotiated rule takes precedence over the brand-wide default.
+        const employeeRule = employeeAccrualRules.get(tc.code);
+        const accrualRule = employeeRule || getAccrualRuleForTimeCode(tc.code);
         let accrualDetails: AccrualResult | null = null;
         let allocatedHours = override ? override.allocated_hours : tc.default_allocation;
 
@@ -139,6 +150,7 @@ export async function GET(request: NextRequest) {
           allocated_hours: allocatedHours,
           is_override: !!override,
           is_accrual: !override && !!accrualRule,
+          is_employee_specific_rule: !override && !!employeeRule,
           accrual_details: accrualDetails,
           is_salaried_psl: isSalariedPsl,
           notes: override?.notes || null

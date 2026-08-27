@@ -2,6 +2,8 @@ import { createClient } from '@libsql/client';
 import { getDatabasePath, getDataDirectory } from './data-paths';
 import { isDemoMode, logDemoModeBanner } from './demo-mode';
 import { getBrandTimeCodes, getCurrentBrand } from './brand-time-codes';
+import { runMigrations } from './migrations';
+import { attendanceMigrations } from './migrations/attendance/migrations';
 import packageJson from '../package.json';
 
 // Uses centralized data paths for cross-platform compatibility
@@ -161,6 +163,28 @@ export async function initializeDatabase() {
       FOREIGN KEY (employee_id) REFERENCES employees(id) ON DELETE CASCADE,
       FOREIGN KEY (time_code) REFERENCES time_codes(code) ON UPDATE CASCADE,
       UNIQUE(employee_id, time_code, year)
+    )
+  `);
+
+  // Create employee_accrual_rules table for individually negotiated accrual
+  // methods (e.g. a salaried employee's negotiated-at-hire vacation
+  // schedule) that override the brand-wide accrual rule for a given time
+  // code. Unlike employee_time_allocations (a static hours number for one
+  // specific year), this stores a structured AccrualRule and is
+  // re-evaluated live, so it keeps advancing through tiers correctly in
+  // future years without manual re-entry.
+  await db.execute(`
+    CREATE TABLE IF NOT EXISTS employee_accrual_rules (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      employee_id INTEGER NOT NULL,
+      time_code TEXT NOT NULL,
+      rule_json TEXT NOT NULL,
+      notes TEXT,
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      FOREIGN KEY (employee_id) REFERENCES employees(id) ON DELETE CASCADE,
+      FOREIGN KEY (time_code) REFERENCES time_codes(code) ON UPDATE CASCADE,
+      UNIQUE(employee_id, time_code)
     )
   `);
 
@@ -364,6 +388,10 @@ export async function initializeDatabase() {
   // Validate schema after initialization
   await validateSchema();
 
+  // Run tracked, one-shot data/schema migrations (mirrors lib/db-auth.ts)
+  console.log('\n🔄 Running attendance database migrations...');
+  await runMigrations(db, attendanceMigrations, 'attendance.db');
+
   console.log('✓ Attendance database initialized');
   console.log('  - Employees table created');
   console.log('  - Time codes table created');
@@ -443,6 +471,7 @@ export async function clearDatabaseForDemo() {
   const tablesToClear = [
     'attendance_entries',
     'employee_time_allocations',
+    'employee_accrual_rules',
     'break_entries',
     'office_presence',
     'employees',

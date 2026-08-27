@@ -49,8 +49,15 @@ export interface TieredSeniorityRule {
   };
 }
 
+// A single years-of-service bracket for the `tenureTiers` rule type.
+export interface TenureTier {
+  minYears: number;
+  maxYears: number | null;
+  hours: number;
+}
+
 export interface AccrualRule {
-  type: 'quarterly' | 'monthly' | 'annual' | 'hoursWorked' | 'tieredSeniority' | 'annualGrant';
+  type: 'quarterly' | 'monthly' | 'annual' | 'hoursWorked' | 'tieredSeniority' | 'annualGrant' | 'tenureTiers';
   hoursPerPeriod?: number;
   maxAnnual?: number;
   maxAccrual?: number;  // For hoursWorked type
@@ -123,6 +130,8 @@ export interface AccrualRule {
     endDay: number;
     units: number;
   }>;
+  // For tenureTiers type
+  tenureTiers?: TenureTier[];
 }
 
 export interface HoursWorkedAccrualDetails {
@@ -171,6 +180,15 @@ export interface AnnualGrantDetails {
   benefitYearEnd: Date;
 }
 
+export interface TenureTiersAccrualDetails {
+  // Whole years of service as of asOfDate, measured on a rolling basis off
+  // the employee's own hire-date anniversary — NOT pinned to a fixed
+  // benefit-year boundary the way the hourly tieredSeniority rule is. A
+  // tier can therefore take effect mid-year, on the anniversary itself.
+  years: number;
+  currentTier: TenureTier | null;
+}
+
 export interface AccrualResult {
   isEligible: boolean;
   eligibilityDate: Date | null;
@@ -181,10 +199,11 @@ export interface AccrualResult {
   nextAccrualDate: Date | null;
   message: string;
   // Type-specific fields
-  accrualType?: 'quarterly' | 'hoursWorked' | 'tieredSeniority' | 'annualGrant';
+  accrualType?: 'quarterly' | 'hoursWorked' | 'tieredSeniority' | 'annualGrant' | 'tenureTiers';
   hoursWorkedDetails?: HoursWorkedAccrualDetails;
   tieredSeniorityDetails?: TieredSeniorityAccrualDetails;
   annualGrantDetails?: AnnualGrantDetails;
+  tenureTiersDetails?: TenureTiersAccrualDetails;
 }
 
 export interface QuarterAccrual {
@@ -910,6 +929,63 @@ export function calculateAnnualGrantAccrual(
 }
 
 /**
+ * Calculate tenure-tiered accrual (e.g., individually negotiated salaried
+ * vacation schedules).
+ *
+ * Unlike `tieredSeniority` (which locks tier selection to a fixed benefit-
+ * year boundary, e.g. Jun 1), this type re-evaluates on a rolling basis off
+ * the employee's own hire-date anniversary: whole years of service as of
+ * `asOfDate`. A tier can therefore take effect the day an employee crosses
+ * a threshold, not just once a year at a fixed calendar date. There is no
+ * wait period or eligibility ramp — these are exempt/salaried schedules
+ * that are effective from hire.
+ */
+export function calculateTenureTiersAccrual(
+  hireDate: Date,
+  asOfDate: Date,
+  rule: AccrualRule
+): AccrualResult {
+  const years = calendarYearsBetween(hireDate, asOfDate);
+  const tiers = rule.tenureTiers || [];
+
+  let currentTier: TenureTier | null = null;
+  for (const tier of tiers) {
+    if (years >= tier.minYears && (tier.maxYears === null || years <= tier.maxYears)) {
+      currentTier = tier;
+      break;
+    }
+  }
+
+  if (!currentTier) {
+    return {
+      isEligible: false,
+      eligibilityDate: hireDate,
+      accruedHours: 0,
+      maxHours: 0,
+      quartersEarned: 0,
+      quarterDetails: [],
+      nextAccrualDate: null,
+      message: 'No applicable tenure tier found.',
+      accrualType: 'tenureTiers',
+      tenureTiersDetails: { years, currentTier: null }
+    };
+  }
+
+  return {
+    isEligible: true,
+    eligibilityDate: hireDate,
+    accruedHours: currentTier.hours,
+    maxHours: currentTier.hours,
+    quartersEarned: 0,
+    quarterDetails: [],
+    nextAccrualDate: null,
+    message: `${years} year(s) of service: ${currentTier.hours}h`,
+    accrualType: 'tenureTiers',
+    tenureTiersDetails: { years, currentTier }
+  };
+}
+
+/**
  * Main function to calculate accrual based on rule type
  *
  * `employmentType` comes from the employee record (full_time/part_time). For
@@ -939,6 +1015,8 @@ export function calculateAccrual(
       return calculateTieredSeniorityAccrual(hireDateObj, targetYear, asOfDateObj, rule, undefined, false, employmentType);
     case 'annualGrant':
       return calculateAnnualGrantAccrual(hireDateObj, targetYear, asOfDateObj, rule);
+    case 'tenureTiers':
+      return calculateTenureTiersAccrual(hireDateObj, asOfDateObj, rule);
     default:
       return {
         isEligible: false,
@@ -950,6 +1028,58 @@ export function calculateAccrual(
         nextAccrualDate: null,
         message: `Unsupported accrual type: ${rule.type}`
       };
+  }
+}
+
+const MONTH_NAMES = [
+  'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'
+];
+
+function formatTierRange(minYears: number, maxYears: number | null): string {
+  return maxYears === null ? `${minYears}+ yr` : `${minYears}–${maxYears} yr`;
+}
+
+/**
+ * Turn a rule + its computed result into a plain-English explanation
+ * suitable for showing directly to a manager who's asking "why is this
+ * number what it is" — the full method (tier ladder, rate, cap, etc.),
+ * not just the final figure. Reuses `result.message` for the "here's where
+ * this employee currently sits" part rather than re-deriving it.
+ */
+export function explainAccrualResult(rule: AccrualRule, result: AccrualResult): string {
+  switch (rule.type) {
+    case 'tenureTiers': {
+      const tierList = (rule.tenureTiers || [])
+        .map(t => `${formatTierRange(t.minYears, t.maxYears)} = ${t.hours}h`)
+        .join(', ');
+      return `Tiered by years of service, measured on a rolling basis from the hire-date anniversary (a tier can take effect mid-year). Tiers: ${tierList}. ${result.message}`;
+    }
+    case 'tieredSeniority': {
+      const periodConfig = typeof rule.period === 'object' ? rule.period : null;
+      const startMonth = periodConfig?.startMonth || 6;
+      const startDay = periodConfig?.startDay || 1;
+      const endMonth = periodConfig?.endMonth || 5;
+      const endDay = periodConfig?.endDay || 31;
+      const benefitYear = `${MONTH_NAMES[startMonth - 1]} ${startDay} – ${MONTH_NAMES[endMonth - 1]} ${endDay}`;
+      const tierList = (rule.tiers || [])
+        .map(t => `${formatTierRange(t.minBaseYears, t.maxBaseYears)} = ${t.fullTime.hours}h`)
+        .join(', ');
+      return `Standard tier based on base years of service as of the start of the benefit year (${benefitYear} — tiers lock in there, not on the hire anniversary). Tiers: ${tierList}. ${result.message}`;
+    }
+    case 'hoursWorked': {
+      const rate = rule.accrualRate || { earnHours: 1, perHoursWorked: 30 };
+      return `Accrues ${rate.earnHours}h for every ${rate.perHoursWorked}h worked, capped at ${rule.maxAccrual ?? '?'}h. ${result.message}`;
+    }
+    case 'annualGrant': {
+      const grantMonth = rule.grantDate?.month || 6;
+      const grantDay = rule.grantDate?.day || 1;
+      return `Granted in full (${rule.maxAnnual ?? '?'}h) each ${MONTH_NAMES[grantMonth - 1]} ${grantDay}, prorated in the first eligible year based on when eligibility started. ${result.message}`;
+    }
+    case 'quarterly': {
+      return `Accrues ${rule.hoursPerPeriod ?? '?'}h per quarter, up to ${rule.maxAnnual ?? '?'}h per year. ${result.message}`;
+    }
+    default:
+      return result.message;
   }
 }
 

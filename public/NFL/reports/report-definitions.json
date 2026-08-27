@@ -18,6 +18,20 @@
       }
     },
     {
+      "id": "vacation-transparency",
+      "name": "Vacation Calculation Detail",
+      "description": "Every employee's vacation balance alongside the exact rule used to calculate it — the brand's standard tier, an individually negotiated rule, or a manual override.",
+      "apiEndpoint": "/api/reports/vacation-transparency",
+      "type": "custom",
+      "isDefault": false,
+      "requiredFeature": "accrualCalculations",
+      "export": {
+        "csv": true,
+        "pdf": false,
+        "filename": "vacation_transparency_report"
+      }
+    },
+    {
       "id": "attendance-summary",
       "name": "Attendance Summary",
       "description": "View attendance entries filtered by employee, time code, and date range",
