@@ -5,6 +5,7 @@ import { db } from '@/lib/db-sqlite';
 import { getBrandFeatures, getLeaveBalanceSummaryConfig, isGlobalReadAccessEnabled } from '@/lib/brand-features';
 import { getBrandTimeCodes } from '@/lib/brand-time-codes';
 import { calculateAccrual, type AccrualResult, type AccrualRule } from '@/lib/accrual-calculations';
+import { getEmployeeAccrualRulesForEmployees } from '@/lib/employee-accrual-rules';
 
 // Force dynamic to prevent caching
 export const dynamic = 'force-dynamic';
@@ -215,6 +216,10 @@ export async function GET(request: NextRequest) {
       allocationsMap.get(row.employee_id)!.set(row.time_code, row.allocated_hours);
     }
 
+    // Individually negotiated accrual rules (e.g. a salaried employee's
+    // vacation schedule) that take precedence over the brand-wide rule.
+    const employeeAccrualRulesMap = await getEmployeeAccrualRulesForEmployees(employeeIds);
+
     const accrualConfig = brandFeatures.features.accrualCalculations as unknown as {
       enabled?: boolean;
       rules?: Record<string, AccrualRule>;
@@ -229,7 +234,8 @@ export async function GET(request: NextRequest) {
     ): BalanceWindow => {
       const empAllocations = allocationsMap.get(emp.id) || new Map();
       const defaultAlloc = timeCodeDefaults.get(lt.timeCode);
-      const accrualRule = accrualRules[lt.timeCode];
+      const employeeRule = employeeAccrualRulesMap.get(emp.id)?.get(lt.timeCode);
+      const accrualRule = employeeRule || accrualRules[lt.timeCode];
 
       if (accrualRule && emp.date_of_hire) {
         // Rules that reset on rehire (e.g. floating holiday) anchor to the

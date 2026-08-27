@@ -5,6 +5,7 @@ import { db } from '@/lib/db-sqlite';
 import { getBrandFeatures, isGlobalReadAccessEnabled } from '@/lib/brand-features';
 import { getBrandTimeCodes } from '@/lib/brand-time-codes';
 import { calculateAccrual, type AccrualRule } from '@/lib/accrual-calculations';
+import { getEmployeeAccrualRules } from '@/lib/employee-accrual-rules';
 
 export const dynamic = 'force-dynamic';
 
@@ -112,7 +113,7 @@ export async function GET(request: NextRequest) {
 
     // Parallelize independent queries
     const year = new Date(startDate).getFullYear();
-    const [groupResult, allocResult, entriesResult] = await Promise.all([
+    const [groupResult, allocResult, entriesResult, employeeAccrualRuleRows] = await Promise.all([
       employee.group_id ? getGroupById(employee.group_id) : Promise.resolve(null),
       db.execute({
         sql: 'SELECT time_code, allocated_hours FROM employee_time_allocations WHERE employee_id = ? AND year = ?',
@@ -127,6 +128,7 @@ export async function GET(request: NextRequest) {
         `,
         args: [empId, startDate, endDate],
       }),
+      getEmployeeAccrualRules(empId),
     ]);
 
     const department = groupResult?.name || 'Unassigned';
@@ -135,8 +137,9 @@ export async function GET(request: NextRequest) {
     for (const row of allocResult.rows as unknown as Array<{ time_code: string; allocated_hours: number }>) {
       allocOverrides.set(row.time_code, row.allocated_hours);
     }
+    const employeeAccrualRules = new Map(employeeAccrualRuleRows.map(r => [r.time_code, r.rule]));
 
-    // Resolve allocations: overrides > accrual rules > default_allocation
+    // Resolve allocations: overrides > employee-specific accrual rule > brand accrual rules > default_allocation
     const accrualCalc = brandFeatures?.features?.accrualCalculations as any;
     const accrualRules = accrualCalc?.enabled ? (accrualCalc.rules || {}) : {};
     const allocations = new Map<string, number>();
@@ -146,7 +149,7 @@ export async function GET(request: NextRequest) {
         allocations.set(tc.code, allocOverrides.get(tc.code)!);
         continue;
       }
-      const accrualRule = accrualRules[tc.code];
+      const accrualRule = employeeAccrualRules.get(tc.code) || accrualRules[tc.code];
       if (accrualRule && employee.date_of_hire) {
         // Rules that reset on rehire (e.g. floating holiday) anchor to the
         // rehire date instead of the original hire date.

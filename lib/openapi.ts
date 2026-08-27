@@ -1048,6 +1048,62 @@ export const openApiSpec = {
         },
       },
     },
+    '/api/employee-accrual-rules': {
+      get: {
+        tags: ['Reference Data'],
+        summary: 'Individually negotiated accrual rule(s) for an employee',
+        description: 'Overrides the brand-wide accrual rule for a given time code — e.g. a salaried employee\'s vacation schedule negotiated at hire. Evaluated live, unlike the flat per-year employee-allocations override.',
+        parameters: [
+          { name: 'employeeId', in: 'query', required: true, schema: { type: 'integer' } },
+          { name: 'timeCode', in: 'query', schema: { type: 'string' }, description: 'If omitted, returns all rules for the employee' },
+        ],
+        responses: {
+          '200': jsonResponse('Accrual rule(s)', { type: 'object', additionalProperties: true }),
+          '400': errorResponse('Employee ID is required'),
+          '401': std401,
+        },
+      },
+      post: {
+        tags: ['Reference Data'],
+        summary: 'Set an employee’s negotiated accrual rule for a time code (admin only)',
+        requestBody: {
+          required: true,
+          content: {
+            'application/json': {
+              schema: {
+                type: 'object',
+                required: ['employee_id', 'time_code', 'rule'],
+                properties: {
+                  employee_id: { type: 'integer' },
+                  time_code: { type: 'string' },
+                  rule: { type: 'object', additionalProperties: true, description: 'An AccrualRule (see lib/accrual-calculations.ts)' },
+                  notes: { type: 'string' },
+                },
+              },
+            },
+          },
+        },
+        responses: {
+          '200': jsonResponse('Saved', { $ref: '#/components/schemas/Success' }),
+          '400': errorResponse('Missing required fields'),
+          '401': std401,
+          '403': std403,
+        },
+      },
+      delete: {
+        tags: ['Reference Data'],
+        summary: 'Remove an employee’s negotiated accrual rule (admin only)',
+        parameters: [
+          { name: 'employeeId', in: 'query', required: true, schema: { type: 'integer' } },
+          { name: 'timeCode', in: 'query', required: true, schema: { type: 'string' } },
+        ],
+        responses: {
+          '200': jsonResponse('Removed', { $ref: '#/components/schemas/Success' }),
+          '401': std401,
+          '403': std403,
+        },
+      },
+    },
     '/api/brand-selection': {
       get: {
         tags: ['Reference Data'],
