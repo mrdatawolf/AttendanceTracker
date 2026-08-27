@@ -4,7 +4,11 @@ import type { AccrualRule } from '../../accrual-calculations';
 /**
  * Seeds individually negotiated VAC accrual rules for 16 NFL salaried
  * employees, decoded from a customer-supplied spreadsheet of per-employee
- * Excel formulas (5 distinct formula shapes across the 16 people).
+ * Excel formulas (6 distinct formula texts across the 16 people, some of
+ * which land on identical tiers via differently-written formulas — see
+ * GROUP_B_HARPER vs GROUP_B_MCCASLIN_NISSEN below). Each rule's
+ * `formulaTemplate` preserves the literal original formula text for
+ * display in the Vacation Calculation Detail report.
  *
  * ASSUMPTION, not confirmed by the customer: years of service is measured
  * on a rolling basis off each employee's own hire-date anniversary, not
@@ -23,7 +27,7 @@ import type { AccrualRule } from '../../accrual-calculations';
  * have already set by hand for one of these employees.
  */
 
-const GENERAL_NOTE =
+export const GENERAL_NOTE =
   'Individually negotiated at hire; years of service measured on a rolling basis ' +
   'off the hire-date anniversary (not the Jun 1 benefit-year boundary hourly VAC uses) ' +
   '— inferred from the customer\'s spreadsheet, not yet confirmed. See lib/__tests__/nfl-salaried-vacation.test.ts.';
@@ -36,15 +40,32 @@ const GROUP_A: AccrualRule = {
     { minYears: 9, maxYears: 15, hours: 160 },
     { minYears: 16, maxYears: null, hours: 200 },
   ],
+  formulaTemplate: 'IF({C}<5,10,IF({C}>15,25,IF({C}>8,20,IF({C}>5,15))))',
 };
 
-const GROUP_B: AccrualRule = {
+// Harper, McCaslin, and Nissen land on the same tiers, but their literal
+// spreadsheet formulas are written differently (Harper's leads with the
+// low-tier check, the other two lead with the high-tier check) — kept as
+// distinct rule objects so formulaTemplate stays faithful to what each
+// person's cell actually contained, not a normalized/deduplicated version.
+const GROUP_B_MCCASLIN_NISSEN: AccrualRule = {
   type: 'tenureTiers',
   tenureTiers: [
     { minYears: 0, maxYears: 7, hours: 120 },
     { minYears: 8, maxYears: 15, hours: 160 },
     { minYears: 16, maxYears: null, hours: 200 },
   ],
+  formulaTemplate: 'IF({C}>15,25,IF({C}>8,20,15))',
+};
+
+const GROUP_B_HARPER: AccrualRule = {
+  type: 'tenureTiers',
+  tenureTiers: [
+    { minYears: 0, maxYears: 7, hours: 120 },
+    { minYears: 8, maxYears: 15, hours: 160 },
+    { minYears: 16, maxYears: null, hours: 200 },
+  ],
+  formulaTemplate: 'IF({C}<8,15,IF({C}>15,25,IF({C}>8,20)))',
 };
 
 const GROUP_C: AccrualRule = {
@@ -53,6 +74,7 @@ const GROUP_C: AccrualRule = {
     { minYears: 0, maxYears: 15, hours: 160 },
     { minYears: 16, maxYears: null, hours: 200 },
   ],
+  formulaTemplate: 'IF({C}>15,25,20)',
 };
 
 const GROUP_D_DORVAL: AccrualRule = {
@@ -61,6 +83,7 @@ const GROUP_D_DORVAL: AccrualRule = {
     { minYears: 0, maxYears: 10, hours: 160 },
     { minYears: 11, maxYears: null, hours: 200 },
   ],
+  formulaTemplate: 'IF({C}>10.167,25,20)',
 };
 
 const GROUP_E: AccrualRule = {
@@ -68,12 +91,16 @@ const GROUP_E: AccrualRule = {
   tenureTiers: [
     { minYears: 0, maxYears: null, hours: 200 },
   ],
+  formulaTemplate: '25',
 };
 
 // IDs and spellings matched against the dev copy of the production
 // database. Two names differ from the customer's original spreadsheet
 // spelling: "Dorval" not "Dorvall", "McCaslin" not "McCasslin".
-const ASSIGNMENTS: Array<{ id: number; lastName: string; firstName: string; rule: AccrualRule; extraNote?: string }> = [
+// Exported so a one-off re-sync script can reuse this exact data (e.g. to
+// push a formulaTemplate addition into an environment where this migration
+// already ran and won't run again) without duplicating it a third time.
+export const ASSIGNMENTS: Array<{ id: number; lastName: string; firstName: string; rule: AccrualRule; extraNote?: string }> = [
   { id: 123, lastName: 'Bartley', firstName: 'Jason', rule: GROUP_A },
   { id: 142, lastName: 'Dorval', firstName: 'Russell', rule: GROUP_D_DORVAL, extraNote:
     'Original formula used a non-round 10.167-year threshold (likely a fractional years-of-service ' +
@@ -85,13 +112,13 @@ const ASSIGNMENTS: Array<{ id: number; lastName: string; firstName: string; rule
   { id: 121, lastName: 'Gann', firstName: 'Jordan', rule: GROUP_A },
   { id: 120, lastName: 'Gregorio', firstName: 'Jamie', rule: GROUP_C },
   { id: 126, lastName: 'Hall', firstName: 'Joseph', rule: GROUP_E },
-  { id: 115, lastName: 'Harper', firstName: 'Dale', rule: GROUP_B },
+  { id: 115, lastName: 'Harper', firstName: 'Dale', rule: GROUP_B_HARPER },
   { id: 128, lastName: 'Hollister', firstName: 'Victor', rule: GROUP_A },
   { id: 143, lastName: 'Kates-McConnell', firstName: 'Logan', rule: GROUP_A },
   { id: 124, lastName: 'Landen', firstName: 'Ry', rule: GROUP_A },
   { id: 117, lastName: 'Maciel', firstName: 'Michael', rule: GROUP_C },
-  { id: 122, lastName: 'McCaslin', firstName: 'Zachary', rule: GROUP_B },
-  { id: 119, lastName: 'Nissen', firstName: 'Brian', rule: GROUP_B },
+  { id: 122, lastName: 'McCaslin', firstName: 'Zachary', rule: GROUP_B_MCCASLIN_NISSEN },
+  { id: 119, lastName: 'Nissen', firstName: 'Brian', rule: GROUP_B_MCCASLIN_NISSEN },
   { id: 118, lastName: 'Tejeda', firstName: 'Salvador', rule: GROUP_A },
   { id: 116, lastName: 'Tostie', firstName: 'Shane', rule: GROUP_C },
   { id: 3, lastName: 'Young', firstName: 'Leandra', rule: GROUP_A },

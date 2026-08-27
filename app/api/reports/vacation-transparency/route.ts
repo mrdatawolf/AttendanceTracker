@@ -4,7 +4,7 @@ import { getUserReadableGroups, isSuperuser, getAllGroups } from '@/lib/queries-
 import { db } from '@/lib/db-sqlite';
 import { getBrandFeatures, isGlobalReadAccessEnabled } from '@/lib/brand-features';
 import { getBrandTimeCodeByCode, getAccrualRuleForTimeCode } from '@/lib/brand-time-codes';
-import { calculateAccrual, explainAccrualResult, type AccrualRule } from '@/lib/accrual-calculations';
+import { calculateAccrual, explainAccrualResult, renderFormulaBreakdown, type AccrualRule } from '@/lib/accrual-calculations';
 import { getEmployeeAccrualRulesForEmployees } from '@/lib/employee-accrual-rules';
 
 // Force dynamic to prevent caching — this depends on "today" (rolling
@@ -24,6 +24,7 @@ interface VacationRow {
   vacation_days: number | null;
   basis: 'override' | 'employee_rule' | 'brand_rule' | 'default' | 'none';
   explanation: string;
+  formula_breakdown: string | null;
 }
 
 export async function GET(request: NextRequest) {
@@ -134,6 +135,7 @@ export async function GET(request: NextRequest) {
           explanation: override.notes
             ? `Manually set to ${override.allocated_hours}h — not calculated from a formula. Notes: ${override.notes}`
             : `Manually set to ${override.allocated_hours}h — not calculated from a formula.`,
+          formula_breakdown: null,
         };
       }
 
@@ -144,19 +146,24 @@ export async function GET(request: NextRequest) {
       if (rule && emp.date_of_hire) {
         const anchorDate = rule.resetOnRehire && emp.rehire_date ? emp.rehire_date : emp.date_of_hire;
         const result = calculateAccrual(anchorDate, year, asOfDate, rule, emp.employment_type ?? undefined);
-        let explanation = explainAccrualResult(rule, result);
-        if (employeeRule) {
-          explanation = `Individually negotiated rule for this employee. ${explanation}`;
-          if (employeeRuleEntry?.notes) {
-            explanation += ` Note: ${employeeRuleEntry.notes}`;
-          }
-        }
+        // Note: employeeRuleEntry.notes (e.g. an assumption behind an
+        // inferred tier boundary) is deliberately NOT included here — it's
+        // an internal caveat for whoever maintains this rule, not something
+        // to show end users. It's still visible in the DB row and in
+        // lib/__tests__/nfl-salaried-vacation.test.ts.
+        const explanation = explainAccrualResult(rule, result);
+        // Formula breakdown is only ever populated for individually
+        // negotiated rules — the brand-wide hourly tier was never
+        // transcribed from a literal spreadsheet formula, so it has no
+        // formulaTemplate and this will naturally be null for those rows.
+        const formulaBreakdown = renderFormulaBreakdown(rule, new Date(anchorDate), asOfDate, result.accruedHours);
         return {
           ...base,
           vacation_hours: result.accruedHours,
           vacation_days: result.accruedHours / 8,
           basis: (employeeRule ? 'employee_rule' : 'brand_rule') as VacationRow['basis'],
           explanation,
+          formula_breakdown: formulaBreakdown,
         };
       }
 
@@ -167,6 +174,7 @@ export async function GET(request: NextRequest) {
           vacation_days: null,
           basis: 'none',
           explanation: 'No hire date on file for this employee — vacation cannot be calculated until one is added.',
+          formula_breakdown: null,
         };
       }
 
@@ -177,6 +185,7 @@ export async function GET(request: NextRequest) {
           vacation_days: defaultAllocation / 8,
           basis: 'default',
           explanation: `Flat ${defaultAllocation}h allocation applied to everyone — no formula, no accrual.`,
+          formula_breakdown: null,
         };
       }
 
@@ -186,6 +195,7 @@ export async function GET(request: NextRequest) {
         vacation_days: null,
         basis: 'none',
         explanation: 'No vacation allocation is configured for this brand.',
+        formula_breakdown: null,
       };
     });
 

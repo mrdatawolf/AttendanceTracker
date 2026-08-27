@@ -1,5 +1,12 @@
 import { describe, it, expect } from 'vitest';
-import { calculateTenureTiersAccrual, calculateTieredSeniorityAccrual, explainAccrualResult, type AccrualRule } from '../accrual-calculations';
+import {
+  calculateTenureTiersAccrual,
+  calculateTieredSeniorityAccrual,
+  explainAccrualResult,
+  calculateFractionalYearsOfService,
+  renderFormulaBreakdown,
+  type AccrualRule,
+} from '../accrual-calculations';
 import nflFeatures from '../../public/NFL/brand-features.json';
 
 const HOURLY_VAC_RULE = nflFeatures.features.accrualCalculations.rules.VAC as unknown as AccrualRule;
@@ -36,8 +43,11 @@ const GROUP_A: AccrualRule = {
     { minYears: 9, maxYears: 15, hours: 160 },
     { minYears: 16, maxYears: null, hours: 200 },
   ],
+  formulaTemplate: 'IF({C}<5,10,IF({C}>15,25,IF({C}>8,20,IF({C}>5,15))))',
 };
 
+// Same tiers, differently-written source formula — see the migration file
+// for why these are kept as two separate rule objects.
 const GROUP_B: AccrualRule = {
   type: 'tenureTiers',
   tenureTiers: [
@@ -45,6 +55,12 @@ const GROUP_B: AccrualRule = {
     { minYears: 8, maxYears: 15, hours: 160 },
     { minYears: 16, maxYears: null, hours: 200 },
   ],
+  formulaTemplate: 'IF({C}>15,25,IF({C}>8,20,15))',
+};
+
+const GROUP_B_HARPER: AccrualRule = {
+  ...GROUP_B,
+  formulaTemplate: 'IF({C}<8,15,IF({C}>15,25,IF({C}>8,20)))',
 };
 
 const GROUP_C: AccrualRule = {
@@ -53,6 +69,7 @@ const GROUP_C: AccrualRule = {
     { minYears: 0, maxYears: 15, hours: 160 },
     { minYears: 16, maxYears: null, hours: 200 },
   ],
+  formulaTemplate: 'IF({C}>15,25,20)',
 };
 
 // Dorval's original formula used a non-round 10.167-year threshold
@@ -70,6 +87,7 @@ const GROUP_D_DORVAL: AccrualRule = {
     { minYears: 0, maxYears: 10, hours: 160 },
     { minYears: 11, maxYears: null, hours: 200 },
   ],
+  formulaTemplate: 'IF({C}>10.167,25,20)',
 };
 
 const GROUP_E: AccrualRule = {
@@ -77,6 +95,7 @@ const GROUP_E: AccrualRule = {
   tenureTiers: [
     { minYears: 0, maxYears: null, hours: 200 },
   ],
+  formulaTemplate: '25',
 };
 
 describe('NFL salaried vacation — tenureTiers accrual', () => {
@@ -92,7 +111,7 @@ describe('NFL salaried vacation — tenureTiers accrual', () => {
       ['Gann, Jordan', d(2018, 10, 19), GROUP_A, 120],
       ['Gregorio, Jamie', d(2015, 4, 15), GROUP_C, 160],
       ['Hall, Joseph', d(1998, 5, 26), GROUP_E, 200],
-      ['Harper, Dale', d(2022, 6, 6), GROUP_B, 120],
+      ['Harper, Dale', d(2022, 6, 6), GROUP_B_HARPER, 120],
       ['Hollister, Victor', d(2023, 3, 1), GROUP_A, 80],
       ['Kates-McConnell, Logan', d(2025, 7, 21), GROUP_A, 80],
       ['Landen, Ry', d(2018, 9, 24), GROUP_A, 120],
@@ -154,5 +173,41 @@ describe('explainAccrualResult', () => {
     expect(explanation).toContain('Jun 1 – May 31');
     expect(explanation).toContain('3–7 yr = 80h');
     expect(explanation).toContain(accrualResult.message);
+  });
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Formula breakdown display (renderFormulaBreakdown / calculateFractionalYearsOfService)
+//
+// This is purely a display feature — it reproduces the customer's original
+// spreadsheet formula, with real values substituted in, for the report's
+// expanded sub-row. It never drives the actual accrued balance (that's
+// still tenureTiers above); the tail of the rendered string reuses the
+// already-computed accruedHours so it can never drift from the real number.
+// ─────────────────────────────────────────────────────────────────────────────
+describe('formula breakdown display', () => {
+  it('calculateFractionalYearsOfService matches Bartley\'s real numbers exactly (609 days -> 1.7 years)', () => {
+    const hire = d(2024, 12, 26);
+    const asOf = d(2026, 8, 27);
+    expect(calculateFractionalYearsOfService(hire, asOf)).toBe(1.7);
+  });
+
+  it('renderFormulaBreakdown substitutes the fractional year and reuses the real computed result', () => {
+    const hire = d(2024, 12, 26);
+    const asOf = d(2026, 8, 26); // matches this file's `asOf` used elsewhere
+    const result = calculateTenureTiersAccrual(hire, asOf, GROUP_A);
+    expect(result.accruedHours).toBe(80);
+
+    const breakdown = renderFormulaBreakdown(GROUP_A, hire, asOf, result.accruedHours);
+    expect(breakdown).toContain('608 days');
+    expect(breakdown).toContain('1.7 years');
+    expect(breakdown).toContain('IF(1.7<5,10,IF(1.7>15,25,IF(1.7>8,20,IF(1.7>5,15))))');
+    expect(breakdown).toContain('= 10 days = 80h');
+  });
+
+  it('returns null for rules without a formulaTemplate', () => {
+    const noTemplateRule: AccrualRule = { type: 'tenureTiers', tenureTiers: GROUP_A.tenureTiers };
+    const breakdown = renderFormulaBreakdown(noTemplateRule, d(2024, 12, 26), d(2026, 8, 26), 80);
+    expect(breakdown).toBeNull();
   });
 });

@@ -132,6 +132,13 @@ export interface AccrualRule {
   }>;
   // For tenureTiers type
   tenureTiers?: TenureTier[];
+  // Optional, display-only: the literal source spreadsheet formula this
+  // rule was transcribed from, with `{C}` standing in for the employee's
+  // fractional years of service (see calculateFractionalYearsOfService).
+  // Not used for computation — the real balance still comes from
+  // tenureTiers above — this exists purely so the report can show the
+  // original formula back to whoever is asking "why is this the number."
+  formulaTemplate?: string;
 }
 
 export interface HoursWorkedAccrualDetails {
@@ -1081,6 +1088,64 @@ export function explainAccrualResult(rule: AccrualRule, result: AccrualResult): 
     default:
       return result.message;
   }
+}
+
+/**
+ * Whole calendar days between two dates, ignoring time-of-day and immune to
+ * DST drift. Raw millisecond subtraction can be off by one whenever the
+ * range crosses a daylight-saving transition (two local midnights aren't
+ * always an exact multiple of 24h apart) — normalizing to UTC first avoids
+ * that entirely.
+ */
+function daysBetweenDates(from: Date, to: Date): number {
+  const fromUtc = Date.UTC(from.getFullYear(), from.getMonth(), from.getDate());
+  const toUtc = Date.UTC(to.getFullYear(), to.getMonth(), to.getDate());
+  return Math.round((toUtc - fromUtc) / (24 * 60 * 60 * 1000));
+}
+
+/**
+ * Fractional years of service, rounded to one decimal — reproduces how the
+ * source spreadsheet's "years of service" column was almost certainly
+ * computed (days between hire date and today, divided by 365.25), as
+ * opposed to the whole-year granularity `calendarYearsBetween` uses for
+ * actual tier selection. Display-only: see `formulaTemplate` on AccrualRule.
+ */
+export function calculateFractionalYearsOfService(hireDate: Date, asOfDate: Date): number {
+  const days = daysBetweenDates(hireDate, asOfDate);
+  return Math.round((days / 365.25) * 10) / 10;
+}
+
+function formatIsoDate(date: Date): string {
+  return date.toISOString().slice(0, 10);
+}
+
+/**
+ * Renders the rule's original source-spreadsheet formula with real values
+ * substituted in, for display next to the computed result — e.g.:
+ *   C = (2026-08-27 − 2024-12-26) = 609 days → 1.7 years (rounded)
+ *   IF(1.7<5,10,IF(1.7>15,25,IF(1.7>8,20,IF(1.7>5,15)))) = 10 days = 80h
+ *
+ * Returns null when the rule has no formulaTemplate (i.e. it isn't a
+ * transcribed spreadsheet formula — most rules aren't). The `= 10 days =
+ * 80h` tail reuses the already-computed accrued hours rather than
+ * re-evaluating the formula independently, so what's displayed can never
+ * drift from the actual balance shown elsewhere in the UI.
+ */
+export function renderFormulaBreakdown(
+  rule: AccrualRule,
+  hireDate: Date,
+  asOfDate: Date,
+  accruedHours: number
+): string | null {
+  if (!rule.formulaTemplate) return null;
+
+  const days = daysBetweenDates(hireDate, asOfDate);
+  const years = calculateFractionalYearsOfService(hireDate, asOfDate);
+  const formula = rule.formulaTemplate.replace(/\{C\}/g, String(years));
+  const resultDays = accruedHours / 8;
+  const resultDaysLabel = Number.isInteger(resultDays) ? resultDays : resultDays.toFixed(1);
+
+  return `C = (${formatIsoDate(asOfDate)} − ${formatIsoDate(hireDate)}) = ${days} days → ${years} years (rounded)\n${formula} = ${resultDaysLabel} days = ${accruedHours}h`;
 }
 
 /**
