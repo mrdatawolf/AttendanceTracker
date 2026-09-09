@@ -28,6 +28,13 @@ const nextConfig = {
   images: {
     unoptimized: true,
   },
+
+  // This is a demo/dev server reached over LAN by IP addresses that vary
+  // per deployment (DHCP), so allow any origin rather than hardcoding one.
+  // Next.js rejects a bare '*' as a footgun, but these multi-segment
+  // wildcards match any IPv4 address or dotted hostname. No effect on
+  // `next start` (production) - allowedDevOrigins only guards the dev server.
+  allowedDevOrigins: ['*.*.*.*', '*.*.*', '*.*'],
 };
 
 module.exports = nextConfig;
