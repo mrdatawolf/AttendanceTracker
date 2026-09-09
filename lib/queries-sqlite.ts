@@ -8,10 +8,10 @@ export interface Employee {
   email?: string;
   role: string;
   group_id?: number;
-  date_of_hire?: string;
-  rehire_date?: string;
+  date_of_hire?: string | null;
+  rehire_date?: string | null;
   employment_type?: string;  // 'full_time' | 'part_time'
-  seniority_rank?: number;   // 1-5 (tiebreaker for same hire dates)
+  seniority_rank?: number | null;   // 1-5 (tiebreaker for same hire dates)
   abbreviation?: string;     // 1-3 char unique identifier for office presence
   show_in_office_presence?: number; // 1 = shown (default), 0 = hidden
   is_salaried_psl?: number; // 1 = use calculated PSL balance, 0 = "Check ADP" (default)
