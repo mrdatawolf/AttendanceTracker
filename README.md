@@ -2,6 +2,10 @@
 
 A modern Next.js-based employee Attendance management system that replaces Excel templates with an enhanced, responsive UI.
 
+![Attendance year view](info/screenshots/attendance-year.png)
+
+**[Take the app tour →](info/APP-TOUR.md)**: screenshots of every page and what each one does.
+
 ## Overview
 
 This application digitizes the traditional Excel-based Attendance process with:
@@ -280,6 +284,8 @@ See [lib/CONFIG.md](lib/CONFIG.md) for detailed configuration documentation.
 ## Available Scripts
 
 - `npm run dev` - Start development server on port 6029 (with Turbopack)
+- `npm run dev:demo` - Start development server in demo mode (database is wiped and reseeded with demo data on startup)
+- `npm run docs:screenshots` - Regenerate the screenshots in `info/screenshots/` from a running demo server (see [APP-TOUR.md](info/APP-TOUR.md#updating-these-screenshots))
 - `npm run build` - Build for production
 - `npm run start` - Start production server on port 6029
 - `npm run start:standalone` - Run standalone server from .next/standalone
@@ -464,6 +470,10 @@ When the `breakTracking` feature flag is enabled in `brand-features.json`, the s
 All detailed documentation is located in the [`info/`](info/) folder:
 
 ### Core Documentation
+- **[APP-TOUR.md](info/APP-TOUR.md)** - Screenshot tour of every page
+  - What each screen does and who uses it
+  - Demo logins for trying it yourself
+
 - **[AUTH-SYSTEM.md](info/AUTH-SYSTEM.md)** - Complete authentication and authorization system documentation
   - User management and groups
   - Permission model and access controls
