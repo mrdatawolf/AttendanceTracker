@@ -23,6 +23,33 @@
       }
     },
     {
+      "id": "leave-balance-summary",
+      "name": "Leave Balance Summary",
+      "description": "Overview of all employees' leave balances for the current year",
+      "apiEndpoint": "/api/reports/leave-balance-summary",
+      "type": "pivot",
+      "isDefault": false,
+      "export": {
+        "csv": true,
+        "pdf": false,
+        "filename": "leave_balance_summary"
+      }
+    },
+    {
+      "id": "attendance-management",
+      "name": "Attendance Management Report",
+      "description": "Per-employee attendance summary with time code usage, day-of-week breakdown, and detailed entries",
+      "apiEndpoint": "/api/reports/attendance-management",
+      "type": "custom",
+      "isDefault": false,
+      "requiredFeature": "attendanceManagement",
+      "export": {
+        "csv": true,
+        "pdf": false,
+        "filename": "attendance_management_report"
+      }
+    },
+    {
       "id": "break-compliance",
       "name": "Break Compliance",
       "description": "Break and lunch entries with compliance status per employee and day",

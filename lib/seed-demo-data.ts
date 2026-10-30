@@ -18,6 +18,7 @@
 import { db, initializeDatabase } from './db-sqlite';
 import { authDb, ensureAuthInitialized } from './db-auth';
 import bcrypt from 'bcryptjs';
+import { formatDateStr } from './date-helpers';
 
 // Helper to get dates relative to today
 function daysAgo(days: number): string {
@@ -68,6 +69,26 @@ interface AttendanceSeedEntry {
 
 function range(empNum: string, code: string, startDaysAgo: number, count: number, hoursPerDay: number, notes: string): AttendanceSeedEntry[] {
   return weekdayDatesAgo(startDaysAgo, count).map(date => ({ empNum, date, code, hours: hoursPerDay, notes }));
+}
+
+/**
+ * Walk forwards from `startDaysAhead` days from now, collecting `count`
+ * weekday dates. Used for scheduled leave so the dashboard's upcoming
+ * views have data.
+ */
+function upcoming(empNum: string, code: string, startDaysAhead: number, count: number, hoursPerDay: number, notes: string): AttendanceSeedEntry[] {
+  const entries: AttendanceSeedEntry[] = [];
+  let offset = startDaysAhead;
+  while (entries.length < count) {
+    const date = new Date();
+    date.setDate(date.getDate() + offset);
+    const dayOfWeek = date.getDay();
+    if (dayOfWeek !== 0 && dayOfWeek !== 6) {
+      entries.push({ empNum, date: formatDateStr(date), code, hours: hoursPerDay, notes });
+    }
+    offset++;
+  }
+  return entries;
 }
 
 function single(empNum: string, code: string, daysBack: number, hours: number, notes: string): AttendanceSeedEntry {
@@ -325,6 +346,14 @@ export async function seedDemoData() {
       single('DEMO009', 'PS', 8, 8, 'Sick day'),
 
       // Amanda Wilson (newest hire) - no entries yet, just started
+
+      // Scheduled leave in the next two weeks so the dashboard's upcoming
+      // staffing and 14-day summaries have data. Chosen from employees with
+      // headroom so the balance states above are unchanged.
+      ...upcoming('DEMO002', 'V', 1, 2, 8, 'Scheduled vacation'),
+      single('DEMO004', 'JD', -3, 8, 'Jury duty summons'),
+      ...upcoming('DEMO007', 'V', 5, 3, 4, 'Scheduled time off'),
+      ...upcoming('DEMO009', 'V', 8, 2, 8, 'Holiday travel'),
     ];
 
     let entriesCreated = 0;

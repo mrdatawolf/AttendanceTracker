@@ -26,7 +26,8 @@
     "auth:init": "tsx scripts/init-auth-db.ts",
     "clean": "node -e \"const fs=require('fs'); ['dist-electron','dist-server','temp-server-build'].forEach(d=>{if(fs.existsSync(d)){fs.rmSync(d,{recursive:true,force:true});console.log('Cleaned: '+d)}})\"",
     "clean:all": "npm run clean && node -e \"const fs=require('fs'); ['.node-portable','.next'].forEach(d=>{if(fs.existsSync(d)){fs.rmSync(d,{recursive:true,force:true});console.log('Cleaned: '+d)}})\"",
-    "test": "vitest run"
+    "test": "vitest run",
+    "docs:screenshots": "node scripts/capture-screenshots.mjs"
   },
   "dependencies": {
     "@libsql/client": "^0.15.15",
@@ -74,6 +75,7 @@
     "eslint": "^9.39.2",
     "eslint-config-next": "^16.0.10",
     "jimp": "^1.6.1",
+    "playwright-core": "^1.48.2",
     "png-to-ico": "^3.0.1",
     "postcss": "^8.4.33",
     "tailwindcss": "^3.4.1",
